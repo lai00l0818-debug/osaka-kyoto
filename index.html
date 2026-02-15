@@ -6,13 +6,9 @@
     <title>關西之旅 2026</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
     <script>
@@ -21,10 +17,10 @@
                 extend: {
                     colors: {
                         sakura: {
-                            light: '#fff0f5', // 淺粉背景
-                            main: '#ffb7b2',  // 櫻花主色
+                            light: '#fff0f5',
+                            main: '#ffb7b2',
                             dark: '#ff9e99',
-                            red: '#e94e59',   // 重點紅
+                            red: '#e94e59',
                             text: '#4a4a4a'
                         }
                     },
@@ -41,10 +37,8 @@
             background-color: #f0f2f5;
             color: #4a4a4a;
             -webkit-tap-highlight-color: transparent;
-            /* 移除置中與寬度限制，改為預設區塊 */
             display: block; 
         }
-        /* 隱藏滾動條但保留功能 */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -52,7 +46,6 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        /* 卡片陰影 */
         .card-shadow {
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
@@ -62,11 +55,9 @@
         .fade-enter-from, .fade-leave-to {
             opacity: 0;
         }
-        /* 文字陰影 */
         .text-shadow {
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-        /* 修正按鈕點擊效果 */
         .btn-active:active {
             transform: scale(0.95);
         }
@@ -77,7 +68,6 @@
     <div id="app" class="h-full w-full bg-white shadow-2xl flex flex-col relative">
         
         <header class="relative h-[250px] md:h-[300px] bg-gray-200 overflow-hidden shrink-0 group">
-            
             <img src="./banner.png" 
                  alt="Trip Banner" 
                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -112,7 +102,9 @@
 
         <main class="flex-1 overflow-y-auto no-scrollbar relative bg-gray-50 pb-20">
             
-            <div class="w-full h-full max-w-7xl mx-auto"> <div v-if="currentTab === 'itinerary'" class="h-full flex flex-col">
+            <div class="w-full h-full max-w-7xl mx-auto"> 
+                
+                <div v-if="currentTab === 'itinerary'" class="h-full flex flex-col">
                     <div class="bg-white sticky top-0 z-30 shadow-sm border-b border-gray-100 py-4">
                         <div class="flex overflow-x-auto no-scrollbar px-4 md:px-10 space-x-4 md:justify-center">
                             <div v-for="(day, index) in days" :key="index" 
@@ -171,7 +163,7 @@
                                             <i :class="item.icon"></i>
                                         </div>
                                         
-                                        <div class="ml-6 flex-1">
+                                        <div class="ml-6 flex-1 overflow-hidden">
                                             <div class="flex justify-between items-baseline pr-8">
                                                 <h3 class="font-bold text-gray-700 text-xl">{{ item.name }}</h3>
                                             </div>
@@ -192,9 +184,19 @@
                                                 {{ item.note }}
                                             </p>
 
-                                            <div v-if="item.image" class="mt-4">
-                                                <img :src="item.image" class="w-full md:w-2/3 h-48 object-cover rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                            <div v-if="item.images && item.images.length > 0" class="mt-4">
+                                                <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2">
+                                                    <img v-for="(img, imgIdx) in item.images" 
+                                                         :key="imgIdx" 
+                                                         :src="img" 
+                                                         class="h-40 w-auto rounded-xl border border-gray-100 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                                                         @click.stop="openImage(img)">
+                                                </div>
                                             </div>
+                                            <div v-else-if="item.image" class="mt-4">
+                                                <img :src="item.image" class="w-full md:w-2/3 h-48 object-cover rounded-xl border border-gray-100 shadow-sm">
+                                            </div>
+
                                         </div>
                                     </div>
                                     
@@ -395,9 +397,8 @@
             <i class="fa-solid fa-plus"></i>
         </button>
 
-
         <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" @click.self="closeModal">
-            <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 slide-up-animation h-[85vh] sm:h-auto flex flex-col shadow-2xl">
+            <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 slide-up-animation h-[90vh] sm:h-auto flex flex-col shadow-2xl">
                 <h3 class="text-xl font-bold mb-6 text-center shrink-0">{{ isEditing ? '編輯行程' : '新增行程' }}</h3>
                 
                 <div class="space-y-5 flex-1 overflow-y-auto pr-2">
@@ -444,21 +445,24 @@
                     </div>
 
                     <div>
-                        <label class="label-text">行程圖片</label>
-                        <div class="flex items-center space-x-4">
-                             <label class="w-24 h-24 bg-gray-50 rounded-xl flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-300 hover:border-sakura-red overflow-hidden relative transition-colors">
-                                <img v-if="editForm.image" :src="editForm.image" class="w-full h-full object-cover">
-                                <i v-else class="fa-solid fa-camera text-gray-400 text-2xl"></i>
-                                <input type="file" @change="handleItineraryImageUpload" class="hidden" accept="image/*">
-                            </label>
-                            <div class="flex-1">
-                                <p class="text-xs text-gray-400 mb-2" v-if="!editForm.image">支援 JPG, PNG</p>
-                                <button v-if="editForm.image" @click="editForm.image = null" class="text-xs text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 font-medium">
-                                    <i class="fa-solid fa-trash mr-1"></i>移除圖片
+                        <label class="label-text">行程圖片 (可多選)</label>
+                        <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
+                            <div v-for="(img, idx) in editForm.images" :key="idx" class="relative aspect-square group">
+                                <img :src="img" class="w-full h-full object-cover rounded-xl border border-gray-200">
+                                <button @click="removeImage(idx)" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full shadow-md flex items-center justify-center hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-times text-xs"></i>
                                 </button>
                             </div>
+
+                            <label class="aspect-square bg-gray-50 rounded-xl flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-gray-300 hover:border-sakura-red hover:bg-red-50 transition-all">
+                                <i class="fa-solid fa-camera text-gray-400 text-xl mb-1"></i>
+                                <span class="text-[10px] text-gray-400">新增</span>
+                                <input type="file" @change="handleItineraryImageUpload" class="hidden" accept="image/*" multiple>
+                            </label>
                         </div>
+                        <p class="text-xs text-gray-400">已選擇 {{ editForm.images ? editForm.images.length : 0 }} 張照片</p>
                     </div>
+
                 </div>
 
                 <div class="flex space-x-4 mt-8 shrink-0">
@@ -541,95 +545,18 @@
                     { dates: '4/18 - 4/19', name: 'EZ HOTEL 關西空港 Seaside' },
                 ];
 
-                // 景點介紹資料
                 const attractions = [
-                    { 
-                        name: '大阪城', 
-                        tag: '歷史地標', 
-                        image: 'https://images.unsplash.com/photo-1590253232502-122fdf9382e7?auto=format&fit=crop&w=600&q=80',
-                        desc: '大阪代表性人氣旅遊點。以大阪城為中心的歷史與觀光遊覽，能體驗多樣的娛樂方式。' 
-                    },
-                    { 
-                        name: '環球影城 (USJ)', 
-                        tag: '主題樂園', 
-                        image: 'https://images.unsplash.com/photo-1624601476296-3ac93782eb83?auto=format&fit=crop&w=600&q=80',
-                        desc: '世界級娛樂設施！超級任天堂世界、哈利波特魔法世界都是必玩重點。' 
-                    },
-                    { 
-                        name: '難波/道頓堀', 
-                        tag: '逛街美食', 
-                        image: 'https://images.unsplash.com/photo-1595500609384-56c6628c6143?auto=format&fit=crop&w=600&q=80',
-                        desc: '大阪代表性的繁華街。充滿「吃倒」精神的美食與歡笑，購物、藥妝店林立。' 
-                    },
-                    { 
-                        name: '清水寺', 
-                        tag: '京都古蹟', 
-                        image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=600&q=80',
-                        desc: '京都最著名的古老寺院，適合租借和服漫步二三年坂，體驗古典風情。' 
-                    },
-                    { 
-                        name: '海遊館', 
-                        tag: '水族館', 
-                        image: 'https://images.unsplash.com/photo-1571216584227-2b740523098f?auto=format&fit=crop&w=600&q=80',
-                        desc: '港灣區域受全球矚目的水族館，展示豐富的環太平洋海洋生物。' 
-                    },
-                    { 
-                        name: '天王寺/HARUKAS', 
-                        tag: '展望台', 
-                        image: 'https://images.unsplash.com/photo-1545625471-a4b5b955c4d0?auto=format&fit=crop&w=600&q=80',
-                        desc: '體驗別有風情的平民氣氛，同時擁有日本第一高樓「阿倍野 HARUKAS」。' 
-                    },
-                    { 
-                        name: '堺市/大鳥神社', 
-                        tag: '在地文化', 
-                        image: 'https://images.unsplash.com/photo-1582234057039-b9d9c2285189?auto=format&fit=crop&w=600&q=80',
-                        desc: '擁有日本代表性文化與古墳群，大鳥神社是在地人推薦的靈驗神社。' 
-                    }
+                    { name: '大阪城', tag: '歷史地標', image: 'https://images.unsplash.com/photo-1590253232502-122fdf9382e7', desc: '大阪代表性人氣旅遊點。' },
+                    { name: '環球影城', tag: '主題樂園', image: 'https://images.unsplash.com/photo-1624601476296-3ac93782eb83', desc: '超級任天堂世界、哈利波特魔法世界。' },
+                    { name: '道頓堀', tag: '逛街美食', image: 'https://images.unsplash.com/photo-1595500609384-56c6628c6143', desc: '大阪代表性的繁華街。' },
+                    { name: '清水寺', tag: '京都古蹟', image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e', desc: '京都最著名的古老寺院。' },
+                    { name: '海遊館', tag: '水族館', image: 'https://images.unsplash.com/photo-1571216584227-2b740523098f', desc: '港灣區域受全球矚目的水族館。' }
                 ];
 
-                // 預設行程資料
                 const defaultItinerary = {
-                    0: [ // 4/11
-                        { id: 1, category: 'flight', name: 'TPE -> KIX', time: '18:00', note: '抵達關西 22:00，有機場接送', transportTime: 0, transportType: 'car', isFlight: true, image: null },
-                        { id: 2, category: 'hotel', name: 'Check-in: BRACKETS HOTEL', time: '23:30', note: '本町站附近', transportTime: 45, transportType: 'car', image: null }
-                    ],
-                    1: [ // 4/12
-                        { id: 3, category: 'spot', name: '大阪城', time: '09:00', ticket: '600円', note: '帶學生證，停留1-2小時', transportTime: 14, transportType: 'train', image: null },
-                        { id: 4, category: 'food', name: '午餐 (大阪城周邊)', time: '12:00', note: '', transportTime: 10, transportType: 'walk', image: null },
-                        { id: 5, category: 'spot', name: '海遊館', time: '14:00', ticket: '2700円', note: '停留3-4小時', transportTime: 32, transportType: 'train', image: null }
-                    ],
-                    2: [ // 4/13
-                        { id: 6, category: 'spot', name: '環球影城 (USJ)', time: '08:00', ticket: '5203円(含快通)', note: '門票+快通4。瑪利歐、哈利波特、小小兵。不能帶外食。', transportTime: 35, transportType: 'train', image: null }
-                    ],
-                    3: [ // 4/14
-                        { id: 7, category: 'spot', name: '難波八阪神社', time: '10:00', note: '', transportTime: 19, transportType: 'train', image: null },
-                        { id: 8, category: 'shopping', name: '道頓堀 & 心齋橋', time: '11:00', note: '瘋狂逛街', transportTime: 10, transportType: 'walk', image: null },
-                        { id: 9, category: 'shopping', name: '梅田逛街', time: '15:00', note: '友都八喜、Parco、LUCUA。取行李前往京都', transportTime: 12, transportType: 'train', image: null },
-                        { id: 10, category: 'hotel', name: 'Check-in: M\'s Hotel 京都', time: '19:00', note: '車程約1小時', transportTime: 60, transportType: 'train', image: null }
-                    ],
-                    4: [ // 4/15
-                        { id: 11, category: 'other', name: '京都國際會館 (研討會)', time: '09:00', note: '參加半天', transportTime: 30, transportType: 'train', image: null },
-                        { id: 12, category: 'food', name: '慶祝午餐 (壽喜燒/燒肉)', time: '13:00', note: '吃飽回飯店休息', transportTime: 20, transportType: 'train', image: null },
-                        { id: 13, category: 'shopping', name: '四條河原町逛街', time: '16:00', note: '高島屋、新京極。逛街一級戰區', transportTime: 10, transportType: 'walk', image: null }
-                    ],
-                    5: [ // 4/16
-                        { id: 14, category: 'spot', name: '清水寺', time: '09:00', note: '租和服。二三年坂 -> 高台寺 -> 八坂神社 -> 祇園', transportTime: 23, transportType: 'train', image: null },
-                        { id: 15, category: 'spot', name: '伏見稻荷 或 嵐山', time: '14:00', note: '方案二選一', transportTime: 30, transportType: 'train', image: null }
-                    ],
-                    6: [ // 4/17
-                        { id: 16, category: 'food', name: 'Smart Coffee', time: '09:00', note: '日式復古早餐', transportTime: 15, transportType: 'walk', image: null },
-                        { id: 17, category: 'hotel', name: '移動回大阪 (肥後橋)', time: '11:00', note: 'Hotel Meldia Osaka Higobashi', transportTime: 60, transportType: 'train', image: null },
-                        { id: 18, category: 'shopping', name: '補逛街行程', time: '14:00', note: '逛前幾天沒逛完的', transportTime: 20, transportType: 'train', image: null }
-                    ],
-                    7: [ // 4/18
-                        { id: 19, category: 'shopping', name: '天王寺 MIO/Q\'s Mall', time: '10:00', note: '百貨公司10點開', transportTime: 23, transportType: 'train', image: null },
-                        { id: 20, category: 'spot', name: '大鳥神社 (堺市)', time: '14:00', note: '在地人推薦，很靈驗', transportTime: 23, transportType: 'train', image: null },
-                        { id: 21, category: 'shopping', name: '臨空城 Outlet', time: '16:00', note: '可寄放行李', transportTime: 31, transportType: 'train', image: null }
-                    ],
-                    8: [ // 4/19
-                        { id: 22, category: 'other', name: '前往機場', time: '08:00', note: '飯店接駁車 (5分鐘)', transportTime: 5, transportType: 'car', image: null },
-                        { id: 23, category: 'shopping', name: '機場免稅店', time: '08:30', note: '最後採買', transportTime: 0, transportType: 'walk', image: null },
-                        { id: 24, category: 'flight', name: 'KIX -> KHH', time: '10:45', note: '回家', transportTime: 0, transportType: 'walk', isFlight: true, image: null }
+                    0: [
+                        { id: 1, category: 'flight', name: 'TPE -> KIX', time: '18:00', note: '抵達關西 22:00', transportTime: 0, transportType: 'car', isFlight: true, images: [] },
+                        { id: 2, category: 'hotel', name: 'Check-in', time: '23:30', note: '本町站附近', transportTime: 45, transportType: 'car', images: [] }
                     ]
                 };
 
@@ -637,10 +564,14 @@
                 const shoppingList = ref(JSON.parse(localStorage.getItem('shoppingList')) || []);
                 const expenses = ref(JSON.parse(localStorage.getItem('expenses')) || []);
                 
-                // Form Data
+                // Modified Edit Form with images array
                 const editForm = reactive({
-                    id: null, category: 'spot', name: '', time: '', note: '', ticket: '', transportTime: 30, transportType: 'train', image: null
+                    id: null, category: 'spot', name: '', time: '', note: '', ticket: '', 
+                    transportTime: 30, transportType: 'train', 
+                    image: null, // Keep for backward compatibility
+                    images: []   // New array for multiple images
                 });
+                
                 const newShoppingItem = reactive({ name: '', image: null, checked: false });
                 const newExpense = reactive({ category: '飲食', name: '', amount: '', method: '現金', date: new Date().toISOString().split('T')[0] });
 
@@ -655,7 +586,6 @@
                 const cashExpenses = computed(() => expenses.value.filter(i => i.method === '現金').reduce((sum, item) => sum + Number(item.amount), 0));
                 const cardExpenses = computed(() => expenses.value.filter(i => i.method === '信用卡').reduce((sum, item) => sum + Number(item.amount), 0));
 
-                // Helper Functions
                 const getCategoryColor = (cat) => {
                     const map = { spot: 'border-pink-400', food: 'border-orange-400', shopping: 'border-purple-400', flight: 'border-blue-400', hotel: 'border-indigo-400', other: 'border-gray-400' };
                     return map[cat] || map.other;
@@ -676,32 +606,51 @@
                     return map[cat] || 'fa-circle';
                 }
 
-                // Actions
                 const openMap = (location) => {
-                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(location)}`, '_blank');
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`, '_blank');
+                };
+                
+                const openImage = (url) => {
+                    window.open(url, '_blank');
                 };
 
                 const openAddModal = () => {
                     isEditing.value = false;
-                    Object.assign(editForm, { id: Date.now(), category: 'spot', name: '', time: '10:00', note: '', ticket: '', transportTime: 30, transportType: 'train', image: null });
+                    Object.assign(editForm, { 
+                        id: Date.now(), category: 'spot', name: '', time: '10:00', note: '', 
+                        ticket: '', transportTime: 30, transportType: 'train', 
+                        image: null, images: [] 
+                    });
                     showEditModal.value = true;
                 };
 
                 const editItem = (item, index) => {
                     isEditing.value = true;
                     editingIndex.value = index;
-                    Object.assign(editForm, { ...item }); // 會自動帶入 image
+                    
+                    const itemCopy = JSON.parse(JSON.stringify(item));
+                    // Migration: if old image exists but no images array, push it
+                    if (itemCopy.image && (!itemCopy.images || itemCopy.images.length === 0)) {
+                        itemCopy.images = [itemCopy.image];
+                    }
+                    if (!itemCopy.images) itemCopy.images = [];
+
+                    Object.assign(editForm, itemCopy);
                     showEditModal.value = true;
                 };
 
                 const saveItinerary = () => {
                     editForm.icon = getCategoryIcon(editForm.category);
-                    const list = itineraryData[currentDayIndex.value] || [];
+                    
+                    // Sync primary image for backward compatibility if needed
+                    if(editForm.images.length > 0) editForm.image = editForm.images[0];
+                    else editForm.image = null;
+
+                    if (!itineraryData[currentDayIndex.value]) itineraryData[currentDayIndex.value] = [];
                     
                     if (isEditing.value) {
-                        list[editingIndex.value] = { ...editForm };
+                        itineraryData[currentDayIndex.value][editingIndex.value] = { ...editForm };
                     } else {
-                        if (!itineraryData[currentDayIndex.value]) itineraryData[currentDayIndex.value] = [];
                         itineraryData[currentDayIndex.value].push({ ...editForm });
                     }
                     saveToLocal();
@@ -733,14 +682,24 @@
                     }
                 };
                 
-                // 新增：處理行程圖片上傳
+                // Modified: Handle multiple file uploads
                 const handleItineraryImageUpload = (event) => {
-                    const file = event.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => editForm.image = e.target.result;
-                        reader.readAsDataURL(file);
+                    const files = event.target.files;
+                    if (files && files.length > 0) {
+                        if (!editForm.images) editForm.images = [];
+                        for (let i = 0; i < files.length; i++) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                editForm.images.push(e.target.result);
+                            };
+                            reader.readAsDataURL(files[i]);
+                        }
                     }
+                };
+
+                // New: Remove specific image
+                const removeImage = (index) => {
+                    editForm.images.splice(index, 1);
                 };
 
                 const saveShoppingItem = () => {
@@ -778,7 +737,6 @@
                     localStorage.setItem('itineraryData', JSON.stringify(itineraryData));
                 };
 
-                // 初始化 SortableJS
                 const initSortable = () => {
                     const el = document.getElementById('itinerary-list');
                     if (el) {
@@ -801,19 +759,18 @@
                     });
                 });
 
-                // 當天數切換時重新綁定 Sortable
                 Vue.watch(currentDayIndex, () => {
                     nextTick(() => initSortable());
                 });
 
                 return {
                     currentTab, currentDayIndex, days, hotels,
-                    currentDayItinerary, openMap,
+                    currentDayItinerary, openMap, openImage,
                     showEditModal, editForm, openAddModal, editItem, saveItinerary, closeModal, isEditing, confirmDelete,
                     shoppingList, showShoppingModal, openShoppingModal, newShoppingItem, handleImageUpload, saveShoppingItem, deleteShoppingItem,
                     expenses, showExpenseModal, openExpenseModal, newExpense, saveExpense, deleteExpense, totalExpenses, cashExpenses, cardExpenses,
                     getCategoryColor, getCategoryBg, getCategoryIcon, getTransportIcon, getExpenseIcon,
-                    calcJpy, calcTwd, attractions, handleItineraryImageUpload
+                    calcJpy, calcTwd, attractions, handleItineraryImageUpload, removeImage
                 };
             }
         }).mount('#app');
@@ -826,4 +783,3 @@
     </style>
 </body>
 </html>
-
