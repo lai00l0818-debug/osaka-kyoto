@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (住宿升級版)</title>
+    <title>關西之旅 2026 (計算機版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -38,6 +38,10 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         [v-cloak] { display: none; }
         .page-loading { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
+        /* 計算機按鈕樣式 */
+        .calc-btn { @apply h-12 rounded-lg bg-gray-50 text-gray-600 font-bold active:bg-gray-200 transition-colors shadow-sm border border-gray-100; }
+        .calc-btn-op { @apply bg-orange-50 text-orange-500 border-orange-100 active:bg-orange-100; }
+        .calc-btn-eq { @apply bg-sakura-red text-white active:bg-sakura-dark shadow-md; }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
@@ -145,19 +149,39 @@
                 <div v-if="currentTab === 'info'" class="space-y-8 pb-10 p-4 md:p-8">
                     
                     <div class="bg-white rounded-2xl p-6 card-shadow border-t-4 border-sakura-red">
-                        <h3 class="text-lg font-bold text-gray-700 mb-4"><i class="fa-solid fa-calculator mr-2 text-gray-400"></i>即時匯率</h3>
-                        <div class="flex items-center space-x-4 mb-4">
-                            <div class="flex-1">
-                                <label class="text-xs text-gray-400 block mb-1">日幣 (JPY)</label>
-                                <input type="number" v-model="calcJpy" class="w-full text-3xl font-bold border-b border-gray-200 focus:border-sakura-red outline-none py-1" placeholder="0">
-                            </div>
-                            <i class="fa-solid fa-arrow-right-arrow-left text-gray-300"></i>
-                            <div class="flex-1">
-                                <label class="text-xs text-gray-400 block mb-1">台幣 (TWD)</label>
-                                <div class="text-3xl font-bold text-gray-700 py-1">{{ calcTwd }}</div>
-                            </div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-700"><i class="fa-solid fa-calculator mr-2 text-gray-400"></i>匯率計算機</h3>
+                            <div class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">匯率: 0.22</div>
                         </div>
-                        <p class="text-xs text-gray-400 text-right">匯率基準: 0.22</p>
+                        
+                        <div class="bg-gray-100 rounded-xl p-4 mb-4 text-right">
+                            <div class="text-gray-500 text-sm h-5 overflow-hidden">{{ calcFormula || ' ' }}</div>
+                            <div class="text-3xl font-bold text-gray-800 break-all">{{ calcInput || '0' }} <span class="text-sm font-normal text-gray-400">JPY</span></div>
+                            <div class="text-sakura-red font-bold text-xl mt-1 border-t border-gray-200 pt-1">{{ calcResultTwd }} <span class="text-xs font-normal">TWD</span></div>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-2">
+                            <button @click="appendCalc('7')" class="calc-btn">7</button>
+                            <button @click="appendCalc('8')" class="calc-btn">8</button>
+                            <button @click="appendCalc('9')" class="calc-btn">9</button>
+                            <button @click="appendCalc('/')" class="calc-btn calc-btn-op"><i class="fa-solid fa-divide"></i></button>
+                            
+                            <button @click="appendCalc('4')" class="calc-btn">4</button>
+                            <button @click="appendCalc('5')" class="calc-btn">5</button>
+                            <button @click="appendCalc('6')" class="calc-btn">6</button>
+                            <button @click="appendCalc('*')" class="calc-btn calc-btn-op"><i class="fa-solid fa-xmark"></i></button>
+                            
+                            <button @click="appendCalc('1')" class="calc-btn">1</button>
+                            <button @click="appendCalc('2')" class="calc-btn">2</button>
+                            <button @click="appendCalc('3')" class="calc-btn">3</button>
+                            <button @click="appendCalc('-')" class="calc-btn calc-btn-op"><i class="fa-solid fa-minus"></i></button>
+                            
+                            <button @click="appendCalc('0')" class="calc-btn">0</button>
+                            <button @click="appendCalc('.')" class="calc-btn">.</button>
+                            <button @click="clearCalc()" class="calc-btn text-red-400">C</button>
+                            <button @click="appendCalc('+')" class="calc-btn calc-btn-op"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <button @click="calculateFinal()" class="w-full mt-2 h-12 rounded-lg bg-sakura-red text-white font-bold shadow-md active:bg-sakura-dark transition-colors text-lg">=</button>
                     </div>
 
                     <div class="bg-white rounded-2xl p-6 card-shadow">
@@ -347,7 +371,6 @@
                     { date: '19', week: 'Sat', fullDate: '2026-04-19', location: '關西機場', lat: 34.4320, lng: 135.2304 }
                 ];
                 
-                // 預設住宿 (如果 DB 為空時使用)
                 const defaultHotels = [
                     { dates: '4/11-14', name: 'BRACKETS HOTEL', checkIn: '15:00', checkOut: '11:00' }, 
                     { dates: '4/14-17', name: 'Ms Hotel', checkIn: '16:00', checkOut: '10:00' }, 
@@ -359,7 +382,7 @@
                 const itineraryData = reactive({});
                 const shoppingList = ref([]);
                 const expenses = ref([]);
-                const hotels = ref([]); // 改為 Ref 以便讀寫
+                const hotels = ref([]); 
                 const weather = reactive({ temp: '--', code: 0, desc: '載入中...', iconClass: 'fa-solid fa-cloud', loading: false });
 
                 const editForm = reactive({ id: null, category: 'spot', name: '', time: '', note: '', ticket: '', transportTime: 30, transportType: 'train', images: [], image: null });
@@ -367,8 +390,47 @@
                 const newExpense = reactive({ category: '飲食', name: '', amount: '', method: '現金', date: new Date().toISOString().split('T')[0] });
                 const hotelForm = reactive({ name: '', dates: '', checkIn: '15:00', checkOut: '11:00' });
 
-                const calcJpy = ref(null);
-                const calcTwd = computed(() => calcJpy.value ? (calcJpy.value * 0.22).toFixed(0) : 0);
+                // 計算機狀態
+                const calcInput = ref('');
+                const calcFormula = ref('');
+                const calcResultTwd = computed(() => {
+                    // 嘗試計算當前輸入的值
+                    try {
+                        // 如果輸入空，顯示0
+                        if (!calcInput.value) return 0;
+                        
+                        // 使用 Function 建構式安全執行數學運算 (替代 eval)
+                        // 注意：這裡只允許數字和運算符，避免安全風險
+                        const safeExpr = calcInput.value.replace(/[^0-9+\-*/.]/g, '');
+                        if(!safeExpr) return 0;
+                        
+                        const jpyResult = new Function('return ' + safeExpr)();
+                        return Math.round(jpyResult * 0.22).toLocaleString();
+                    } catch (e) {
+                        return '...';
+                    }
+                });
+
+                const appendCalc = (val) => {
+                    calcInput.value += val;
+                };
+                
+                const clearCalc = () => {
+                    calcInput.value = '';
+                    calcFormula.value = '';
+                };
+
+                const calculateFinal = () => {
+                    try {
+                        const safeExpr = calcInput.value.replace(/[^0-9+\-*/.]/g, '');
+                        if(!safeExpr) return;
+                        const result = new Function('return ' + safeExpr)();
+                        calcFormula.value = calcInput.value + ' =';
+                        calcInput.value = String(result);
+                    } catch(e) {
+                        calcInput.value = 'Error';
+                    }
+                };
 
                 const getCategoryColor = (cat) => ({ spot: 'border-pink-400', food: 'border-orange-400', shopping: 'border-purple-400', flight: 'border-blue-400', hotel: 'border-indigo-400' }[cat] || 'border-gray-400');
                 const getCategoryBg = (cat) => ({ spot: 'bg-pink-400', food: 'bg-orange-400', shopping: 'bg-purple-400', flight: 'bg-blue-400', hotel: 'bg-indigo-400' }[cat] || 'bg-gray-400');
@@ -425,11 +487,11 @@
                         const dbItinerary = await localforage.getItem('itineraryData');
                         const dbShopping = await localforage.getItem('shoppingList');
                         const dbExpenses = await localforage.getItem('expenses');
-                        const dbHotels = await localforage.getItem('hotels'); // 載入住宿
+                        const dbHotels = await localforage.getItem('hotels'); 
 
                         shoppingList.value = Array.isArray(dbShopping) ? dbShopping : [];
                         expenses.value = Array.isArray(dbExpenses) ? dbExpenses : [];
-                        hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; // 若無資料則用預設
+                        hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; 
                         
                         if (!dbItinerary) {
                              const oldIt = localStorage.getItem('itineraryData');
@@ -462,7 +524,7 @@
                         await localforage.setItem('itineraryData', JSON.parse(JSON.stringify(itineraryData)));
                         await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value)));
                         await localforage.setItem('expenses', JSON.parse(JSON.stringify(expenses.value)));
-                        await localforage.setItem('hotels', JSON.parse(JSON.stringify(hotels.value))); // 儲存住宿
+                        await localforage.setItem('hotels', JSON.parse(JSON.stringify(hotels.value))); 
                     } catch (e) {
                         alert("儲存失敗: " + e.message);
                     }
@@ -520,7 +582,7 @@
                     if (currentTab.value === 'itinerary') openAddModal();
                     else if (currentTab.value === 'shopping') showShoppingModal.value = true;
                     else if (currentTab.value === 'expenses') showExpenseModal.value = true;
-                    else if (currentTab.value === 'info') { // 新增住宿
+                    else if (currentTab.value === 'info') { 
                         hotelForm.name = ''; hotelForm.dates = ''; hotelForm.checkIn = '15:00'; hotelForm.checkOut = '11:00';
                         showHotelModal.value = true;
                     }
@@ -600,7 +662,9 @@
                     saveShoppingItem, deleteShoppingItem, handleShoppingImageUpload,
                     saveExpense, deleteExpense, saveHotel, deleteHotel,
                     openMap, openImage, handleItineraryImageUpload, removeImage,
-                    calcJpy, calcTwd, weather
+                    weather,
+                    // 計算機相關
+                    calcInput, calcFormula, calcResultTwd, appendCalc, clearCalc, calculateFinal
                 };
             }
         }).mount('#app');
