@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (完整修復版)</title>
+    <title>關西之旅 2026 (無限容量版)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
@@ -16,9 +18,7 @@
             theme: {
                 extend: {
                     colors: {
-                        sakura: {
-                            light: '#fff0f5', main: '#ffb7b2', dark: '#ff9e99', red: '#e94e59', text: '#4a4a4a'
-                        }
+                        sakura: { light: '#fff0f5', main: '#ffb7b2', dark: '#ff9e99', red: '#e94e59', text: '#4a4a4a' }
                     },
                     fontFamily: { sans: ['Noto Sans TC', 'sans-serif'] }
                 }
@@ -33,16 +33,23 @@
         .card-shadow { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); }
         .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         .btn-active:active { transform: scale(0.95); }
-        /* Loading Spinner */
         .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #e94e59; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         [v-cloak] { display: none; }
+        /* Loading Overlay */
+        .page-loading { position: fixed; inset: 0; bg-white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
 
     <div id="app" v-cloak class="h-full w-full bg-white shadow-2xl flex flex-col relative">
         
+        <div v-if="isLoadingData" class="page-loading">
+            <div class="loader w-10 h-10 border-4 mb-4 text-sakura-red"></div>
+            <p class="text-gray-500 font-bold">正在升級資料庫...</p>
+            <p class="text-xs text-gray-400 mt-2">首次載入可能需要幾秒鐘轉移舊資料</p>
+        </div>
+
         <header class="relative h-[250px] md:h-[300px] bg-gray-200 overflow-hidden shrink-0 group">
             <img src="./banner.png" alt="Trip Banner" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
             <div class="hidden absolute inset-0 bg-sakura-light items-center justify-center text-sakura-main"><i class="fa-solid fa-image text-4xl"></i></div>
@@ -240,21 +247,13 @@
 
         createApp({
             setup() {
-                // Safe load function to prevent crashes
-                const safeLoad = (key, defaultVal) => {
-                    try {
-                        const saved = localStorage.getItem(key);
-                        return saved ? JSON.parse(saved) : defaultVal;
-                    } catch (e) {
-                        console.error('Data load error:', e);
-                        return defaultVal;
-                    }
-                };
+                // Config LocalForage (The big storage solution)
+                localforage.config({ name: 'TripApp', storeName: 'trip_data' });
 
                 const currentTab = ref('itinerary');
                 const currentDayIndex = ref(0);
                 const showEditModal = ref(false), showShoppingModal = ref(false), showExpenseModal = ref(false);
-                const isEditing = ref(false), editingIndex = ref(-1), isCompressing = ref(false);
+                const isEditing = ref(false), editingIndex = ref(-1), isCompressing = ref(false), isLoadingData = ref(true);
 
                 const days = [
                     { date: '11', week: 'Fri', fullDate: '2026-04-11', location: '大阪' }, { date: '12', week: 'Sat', fullDate: '2026-04-12', location: '大阪' },
@@ -274,13 +273,83 @@
 
                 const defaultItinerary = { 0: [{ id: 1, category: 'flight', name: 'TPE -> KIX', time: '18:00', note: '抵達關西', transportTime: 0, transportType: 'car', isFlight: true, images: [] }] };
 
-                const itineraryData = reactive(safeLoad('itineraryData', defaultItinerary));
-                const shoppingList = ref(safeLoad('shoppingList', []));
-                const expenses = ref(safeLoad('expenses', []));
+                // Reactive State
+                const itineraryData = reactive({});
+                const shoppingList = ref([]);
+                const expenses = ref([]);
 
                 const editForm = reactive({ id: null, category: 'spot', name: '', time: '', note: '', ticket: '', transportTime: 30, transportType: 'train', images: [], image: null });
                 const newShoppingItem = reactive({ name: '', image: null, checked: false });
                 const newExpense = reactive({ category: '飲食', name: '', amount: '', method: '現金', date: new Date().toISOString().split('T')[0] });
+
+                // --- Data Migration & Loading (Critical Update) ---
+                const loadData = async () => {
+                    try {
+                        isLoadingData.value = true;
+                        
+                        // 1. Try Load from Big Storage (LocalForage)
+                        const dbItinerary = await localforage.getItem('itineraryData');
+                        const dbShopping = await localforage.getItem('shoppingList');
+                        const dbExpenses = await localforage.getItem('expenses');
+
+                        // 2. If empty, check old localStorage for migration
+                        if (!dbItinerary) {
+                            const oldIt = localStorage.getItem('itineraryData');
+                            if (oldIt) {
+                                const parsed = JSON.parse(oldIt);
+                                await localforage.setItem('itineraryData', parsed); // Migrate
+                                Object.assign(itineraryData, parsed);
+                            } else {
+                                Object.assign(itineraryData, defaultItinerary);
+                            }
+                        } else {
+                            Object.assign(itineraryData, dbItinerary);
+                        }
+
+                        if (!dbShopping) {
+                             const oldShop = localStorage.getItem('shoppingList');
+                             if(oldShop) {
+                                 const parsed = JSON.parse(oldShop);
+                                 await localforage.setItem('shoppingList', parsed);
+                                 shoppingList.value = parsed;
+                             }
+                        } else {
+                            shoppingList.value = dbShopping;
+                        }
+
+                        if (!dbExpenses) {
+                             const oldExp = localStorage.getItem('expenses');
+                             if(oldExp) {
+                                 const parsed = JSON.parse(oldExp);
+                                 await localforage.setItem('expenses', parsed);
+                                 expenses.value = parsed;
+                             }
+                        } else {
+                            expenses.value = dbExpenses;
+                        }
+
+                    } catch (e) {
+                        console.error('Data load error:', e);
+                        Object.assign(itineraryData, defaultItinerary);
+                    } finally {
+                        isLoadingData.value = false;
+                        nextTick(() => initSortable());
+                    }
+                };
+
+                onMounted(loadData);
+
+                // --- Async Saving ---
+                const saveToDB = async () => {
+                    try {
+                        // Use structuredClone proxy removal technique or simple copy
+                        await localforage.setItem('itineraryData', JSON.parse(JSON.stringify(itineraryData)));
+                        await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value)));
+                        await localforage.setItem('expenses', JSON.parse(JSON.stringify(expenses.value)));
+                    } catch (e) {
+                        alert("儲存失敗: " + e.message);
+                    }
+                };
 
                 const currentDayItinerary = computed(() => itineraryData[currentDayIndex.value] || []);
                 const totalExpenses = computed(() => expenses.value.reduce((sum, item) => sum + Number(item.amount), 0));
@@ -294,7 +363,6 @@
                 const getExpenseIcon = (c) => ({ '飲食': 'fa-utensils', '交通': 'fa-train', '購物': 'fa-bag-shopping', '門票': 'fa-ticket' }[c] || 'fa-receipt');
                 const getTabIcon = (t) => ({ 'itinerary': 'fa-map-location-dot', 'info': 'fa-circle-info', 'shopping': 'fa-basket-shopping', 'expenses': 'fa-coins' }[t]);
 
-                // --- Core Image Compression Logic ---
                 const compressImage = (file) => {
                     return new Promise((resolve) => {
                         const reader = new FileReader();
@@ -304,18 +372,14 @@
                             img.src = e.target.result;
                             img.onload = () => {
                                 const canvas = document.createElement('canvas');
-                                const MAX_WIDTH = 800; // Resize to max 800px width
+                                const MAX_WIDTH = 800; 
                                 let width = img.width;
                                 let height = img.height;
-                                if (width > MAX_WIDTH) {
-                                    height *= MAX_WIDTH / width;
-                                    width = MAX_WIDTH;
-                                }
-                                canvas.width = width;
-                                canvas.height = height;
+                                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                                canvas.width = width; canvas.height = height;
                                 const ctx = canvas.getContext('2d');
                                 ctx.drawImage(img, 0, 0, width, height);
-                                resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compress to 70% quality
+                                resolve(canvas.toDataURL('image/jpeg', 0.7));
                             };
                         };
                     });
@@ -358,43 +422,32 @@
                     isEditing.value = true; 
                     editingIndex.value = idx; 
                     const copy = JSON.parse(JSON.stringify(item)); 
-                    // Migrate old single image to array if needed
                     if(copy.image && (!copy.images || copy.images.length === 0)) copy.images = [copy.image];
                     if(!copy.images) copy.images = [];
                     Object.assign(editForm, copy); 
                     showEditModal.value = true; 
                 };
                 
-                const saveToLocal = () => {
-                    try {
-                        localStorage.setItem('itineraryData', JSON.stringify(itineraryData));
-                        localStorage.setItem('shoppingList', JSON.stringify(shoppingList.value));
-                        localStorage.setItem('expenses', JSON.stringify(expenses.value));
-                    } catch (e) { 
-                        if (e.name === 'QuotaExceededError') alert("儲存空間已滿，請刪除部分照片！");
-                        else alert("儲存失敗");
-                    }
-                };
-
-                const saveItinerary = () => {
+                const saveItinerary = async () => {
                     editForm.icon = getCategoryIcon(editForm.category);
-                    if(editForm.images.length > 0) editForm.image = editForm.images[0]; // Sync for safety
+                    if(editForm.images.length > 0) editForm.image = editForm.images[0]; 
                     else editForm.image = null;
 
                     if (!itineraryData[currentDayIndex.value]) itineraryData[currentDayIndex.value] = [];
                     if (isEditing.value) itineraryData[currentDayIndex.value][editingIndex.value] = { ...editForm };
                     else itineraryData[currentDayIndex.value].push({ ...editForm });
-                    saveToLocal(); showEditModal.value = false;
+                    await saveToDB(); 
+                    showEditModal.value = false;
                 };
 
-                const confirmDelete = () => { if(confirm('刪除?')) { itineraryData[currentDayIndex.value].splice(editingIndex.value, 1); saveToLocal(); showEditModal.value = false; } };
+                const confirmDelete = async () => { if(confirm('刪除?')) { itineraryData[currentDayIndex.value].splice(editingIndex.value, 1); await saveToDB(); showEditModal.value = false; } };
                 const removeImage = (idx) => editForm.images.splice(idx, 1);
                 
-                const saveShoppingItem = () => { if(newShoppingItem.name) { shoppingList.value.push({...newShoppingItem}); saveToLocal(); showShoppingModal.value = false; newShoppingItem.name=''; newShoppingItem.image=null; }};
-                const deleteShoppingItem = (idx) => { shoppingList.value.splice(idx, 1); saveToLocal(); };
+                const saveShoppingItem = async () => { if(newShoppingItem.name) { shoppingList.value.push({...newShoppingItem}); await saveToDB(); showShoppingModal.value = false; newShoppingItem.name=''; newShoppingItem.image=null; }};
+                const deleteShoppingItem = async (idx) => { shoppingList.value.splice(idx, 1); await saveToDB(); };
                 
-                const saveExpense = () => { if(newExpense.amount) { expenses.value.unshift({...newExpense}); saveToLocal(); showExpenseModal.value = false; newExpense.name=''; newExpense.amount=''; }};
-                const deleteExpense = (idx) => { if(confirm('刪除?')) { expenses.value.splice(idx, 1); saveToLocal(); } };
+                const saveExpense = async () => { if(newExpense.amount) { expenses.value.unshift({...newExpense}); await saveToDB(); showExpenseModal.value = false; newExpense.name=''; newExpense.amount=''; }};
+                const deleteExpense = async (idx) => { if(confirm('刪除?')) { expenses.value.splice(idx, 1); await saveToDB(); } };
                 
                 const openMap = (l) => window.open(`https://www.google.com/maps/search/?api=1&query=?q=${encodeURIComponent(l)}`, '_blank');
                 const openImage = (u) => window.open(u, '_blank');
@@ -402,19 +455,19 @@
 
                 const initSortable = () => {
                     const el = document.getElementById('itinerary-list');
-                    if (el) Sortable.create(el, { handle: '.handle', animation: 150, onEnd: (evt) => {
+                    if (el) Sortable.create(el, { handle: '.handle', animation: 150, onEnd: async (evt) => {
                         const list = itineraryData[currentDayIndex.value];
                         const item = list.splice(evt.oldIndex, 1)[0];
                         list.splice(evt.newIndex, 0, item);
-                        saveToLocal();
+                        await saveToDB();
                     }});
                 };
-                onMounted(() => nextTick(() => initSortable()));
+                
                 Vue.watch(currentDayIndex, () => nextTick(() => initSortable()));
 
                 return {
                     currentTab, currentDayIndex, days, hotels, attractions, currentDayItinerary, totalExpenses, cashExpenses, cardExpenses,
-                    showEditModal, showShoppingModal, showExpenseModal, editForm, newShoppingItem, newExpense, isEditing, isCompressing,
+                    showEditModal, showShoppingModal, showExpenseModal, editForm, newShoppingItem, newExpense, isEditing, isCompressing, isLoadingData,
                     getCategoryColor, getCategoryBg, getCategoryIcon, getTransportIcon, getExpenseIcon, getTabIcon,
                     handleFabClick, openAddModal, editItem, saveItinerary, confirmDelete, closeModal,
                     saveShoppingItem, deleteShoppingItem, handleShoppingImageUpload,
