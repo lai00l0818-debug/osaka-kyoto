@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (即時天氣版)</title>
+    <title>關西之旅 2026 (完美修復版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -38,7 +38,6 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         [v-cloak] { display: none; }
         .page-loading { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
-        .weather-spin { animation: spin 2s linear infinite; }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
@@ -47,7 +46,7 @@
         
         <div v-if="isLoadingData" class="page-loading">
             <div class="loader w-10 h-10 border-4 mb-4 text-sakura-red"></div>
-            <p class="text-gray-500 font-bold">載入行程資料中...</p>
+            <p class="text-gray-500 font-bold">載入資料中...</p>
         </div>
 
         <header class="relative h-[250px] md:h-[300px] bg-gray-200 overflow-hidden shrink-0 group">
@@ -172,11 +171,27 @@
                 </div>
 
                 <div v-if="currentTab === 'shopping'" class="p-4 md:p-8">
-                     <div v-if="shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh]"><i class="fa-solid fa-basket-shopping text-4xl text-gray-300 mb-4"></i><p>無購物清單</p></div>
+                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh]">
+                        <i class="fa-solid fa-basket-shopping text-6xl text-gray-200 mb-4"></i>
+                        <p>尚無購物清單</p>
+                        <p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p>
+                     </div>
                      <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         <div v-for="(item, index) in shoppingList" :key="index" class="bg-white rounded-xl card-shadow overflow-hidden group">
-                            <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden"><img v-if="item.image" :src="item.image" class="w-full h-full object-cover"><i v-else class="fa-solid fa-camera text-gray-300 text-3xl"></i></div>
-                            <div class="p-4"><h4 class="font-bold text-gray-700 truncate">{{ item.name }}</h4><div class="flex justify-between mt-2"><label class="flex items-center"><input type="checkbox" v-model="item.checked" class="w-5 h-5 accent-sakura-red"><span class="text-xs ml-2 text-gray-400" v-if="item.checked">已購買</span></label><button @click="deleteShoppingItem(index)"><i class="fa-solid fa-trash-can text-gray-300 hover:text-red-400"></i></button></div></div>
+                            <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
+                                <img v-if="item.image" :src="item.image" class="w-full h-full object-cover">
+                                <i v-else class="fa-solid fa-camera text-gray-300 text-3xl"></i>
+                            </div>
+                            <div class="p-4">
+                                <h4 class="font-bold text-gray-700 truncate">{{ item.name }}</h4>
+                                <div class="flex justify-between mt-2">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="item.checked" class="w-5 h-5 accent-sakura-red">
+                                        <span class="text-xs ml-2 text-gray-400" v-if="item.checked">已購買</span>
+                                    </label>
+                                    <button @click="deleteShoppingItem(index)"><i class="fa-solid fa-trash-can text-gray-300 hover:text-red-400"></i></button>
+                                </div>
+                            </div>
                         </div>
                      </div>
                 </div>
@@ -186,9 +201,20 @@
                         <p class="text-sm text-gray-400">總支出 (JPY)</p><div class="text-5xl font-bold text-sakura-red mt-3">¥ {{ totalExpenses.toLocaleString() }}</div>
                         <div class="mt-4 flex justify-center space-x-4 text-xs text-gray-500"><span>現金: {{ cashExpenses.toLocaleString() }}</span><span>信用卡: {{ cardExpenses.toLocaleString() }}</span></div>
                     </div>
+                    
+                    <div v-if="!expenses || expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400">
+                        <i class="fa-solid fa-receipt text-6xl text-gray-200 mb-4"></i>
+                        <p>尚無記帳紀錄</p>
+                    </div>
+
                     <div class="space-y-3 pb-20 max-w-4xl mx-auto w-full">
                         <div v-for="(exp, index) in expenses" :key="index" class="bg-white p-4 rounded-xl flex justify-between items-center card-shadow">
-                            <div class="flex items-center"><div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 mr-3"><i :class="getExpenseIcon(exp.category)"></i></div><div><div class="font-bold text-gray-700">{{ exp.name }}</div><div class="text-xs text-gray-400">{{ exp.date }} · {{ exp.category }}</div></div></div>
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 mr-3">
+                                    <i :class="getExpenseIcon(exp.category)"></i>
+                                </div>
+                                <div><div class="font-bold text-gray-700">{{ exp.name }}</div><div class="text-xs text-gray-400">{{ exp.date }} · {{ exp.category }}</div></div>
+                            </div>
                             <div class="flex items-center"><div class="font-bold text-lg mr-4">¥ {{ exp.amount }}</div><button @click="deleteExpense(index)" class="text-gray-300 hover:text-red-400"><i class="fa-solid fa-trash"></i></button></div>
                         </div>
                     </div>
@@ -196,7 +222,9 @@
             
             </div> </main>
 
-        <button v-if="['itinerary','shopping','expenses'].includes(currentTab)" @click="handleFabClick" class="fixed bottom-24 right-6 w-16 h-16 bg-sakura-red text-white rounded-full shadow-xl flex items-center justify-center text-3xl btn-active z-40 hover:scale-110 transition-transform"><i class="fa-solid fa-plus"></i></button>
+        <button v-if="['itinerary','shopping','expenses'].includes(currentTab)" @click="handleFabClick" class="fixed bottom-24 right-6 w-16 h-16 bg-sakura-red text-white rounded-full shadow-xl flex items-center justify-center text-3xl btn-active z-40 hover:scale-110 transition-transform">
+            <i class="fa-solid fa-plus"></i>
+        </button>
 
         <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" @click.self="closeModal">
             <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 h-[90vh] sm:h-auto flex flex-col shadow-2xl slide-up-animation">
@@ -206,11 +234,8 @@
                     <div><label class="label-text">名稱</label><input type="text" v-model="editForm.name" class="input-field" placeholder="行程名稱"></div>
                     <div class="grid grid-cols-2 gap-4"><div><label class="label-text">時間</label><input type="time" v-model="editForm.time" class="input-field"></div><div><label class="label-text">交通時間(分)</label><input type="number" v-model="editForm.transportTime" class="input-field"></div></div>
                     <div><label class="label-text">交通方式</label><select v-model="editForm.transportType" class="input-field"><option value="walk">步行</option><option value="train">大眾運輸</option><option value="car">開車/接送</option></select></div>
-                    
                     <div><label class="label-text">費用 / 門票</label><input type="text" v-model="editForm.ticket" class="input-field" placeholder="例如：600円"></div>
-                    
                     <div><label class="label-text">備註</label><textarea v-model="editForm.note" class="input-field h-20"></textarea></div>
-                    
                     <div>
                         <label class="label-text flex justify-between items-center"><span>圖片 (可多選)</span><span v-if="isCompressing" class="text-sakura-red text-xs flex items-center"><div class="loader mr-1"></div>處理中...</span></label>
                         <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -274,16 +299,15 @@
                 const showEditModal = ref(false), showShoppingModal = ref(false), showExpenseModal = ref(false);
                 const isEditing = ref(false), editingIndex = ref(-1), isCompressing = ref(false), isLoadingData = ref(true);
 
-                // 1. 在這裡加入了經緯度 (lat, lng) 供天氣 API 使用
                 const days = [
                     { date: '11', week: 'Fri', fullDate: '2026-04-11', location: '大阪', lat: 34.6937, lng: 135.5023 },
                     { date: '12', week: 'Sat', fullDate: '2026-04-12', location: '大阪', lat: 34.6937, lng: 135.5023 },
-                    { date: '13', week: 'Sun', fullDate: '2026-04-13', location: '環球影城', lat: 34.6654, lng: 135.4323 }, // USJ 位置
-                    { date: '14', week: 'Mon', fullDate: '2026-04-14', location: '大阪/京都', lat: 35.0116, lng: 135.7681 }, // 以京都為準
+                    { date: '13', week: 'Sun', fullDate: '2026-04-13', location: '環球影城', lat: 34.6654, lng: 135.4323 },
+                    { date: '14', week: 'Mon', fullDate: '2026-04-14', location: '大阪/京都', lat: 35.0116, lng: 135.7681 },
                     { date: '15', week: 'Tue', fullDate: '2026-04-15', location: '京都', lat: 35.0116, lng: 135.7681 },
                     { date: '16', week: 'Wed', fullDate: '2026-04-16', location: '京都', lat: 35.0116, lng: 135.7681 },
                     { date: '17', week: 'Thu', fullDate: '2026-04-17', location: '京都/大阪', lat: 34.6937, lng: 135.5023 },
-                    { date: '18', week: 'Fri', fullDate: '2026-04-18', location: '大阪/堺', lat: 34.5733, lng: 135.4830 }, // 堺市
+                    { date: '18', week: 'Fri', fullDate: '2026-04-18', location: '大阪/堺', lat: 34.5733, lng: 135.4830 },
                     { date: '19', week: 'Sat', fullDate: '2026-04-19', location: '關西機場', lat: 34.4320, lng: 135.2304 }
                 ];
                 
@@ -293,7 +317,7 @@
                 const itineraryData = reactive({});
                 const shoppingList = ref([]);
                 const expenses = ref([]);
-                const weather = reactive({ temp: '--', code: 0, desc: '載入中...', iconClass: 'fa-cloud', loading: false });
+                const weather = reactive({ temp: '--', code: 0, desc: '載入中...', iconClass: 'fa-solid fa-cloud', loading: false });
 
                 const editForm = reactive({ id: null, category: 'spot', name: '', time: '', note: '', ticket: '', transportTime: 30, transportType: 'train', images: [], image: null });
                 const newShoppingItem = reactive({ name: '', image: null, checked: false });
@@ -301,15 +325,25 @@
                 const calcJpy = ref(null);
                 const calcTwd = computed(() => calcJpy.value ? (calcJpy.value * 0.22).toFixed(0) : 0);
 
-                // --- 天氣 API 相關邏輯 ---
+                // --- 1. 修復：加入 fa-solid 前綴，確保圖示顯示 ---
+                const getCategoryColor = (cat) => ({ spot: 'border-pink-400', food: 'border-orange-400', shopping: 'border-purple-400', flight: 'border-blue-400', hotel: 'border-indigo-400' }[cat] || 'border-gray-400');
+                const getCategoryBg = (cat) => ({ spot: 'bg-pink-400', food: 'bg-orange-400', shopping: 'bg-purple-400', flight: 'bg-blue-400', hotel: 'bg-indigo-400' }[cat] || 'bg-gray-400');
+                
+                // Icon 修復點：
+                const getCategoryIcon = (cat) => ({ spot: 'fa-solid fa-camera', food: 'fa-solid fa-utensils', shopping: 'fa-solid fa-bag-shopping', flight: 'fa-solid fa-plane', hotel: 'fa-solid fa-bed' }[cat] || 'fa-solid fa-star');
+                const getTransportIcon = (t) => t === 'walk' ? 'fa-solid fa-person-walking' : t === 'car' ? 'fa-solid fa-car' : 'fa-solid fa-train-subway';
+                const getExpenseIcon = (c) => ({ '飲食': 'fa-solid fa-utensils', '交通': 'fa-solid fa-train', '購物': 'fa-solid fa-bag-shopping', '門票': 'fa-solid fa-ticket' }[c] || 'fa-solid fa-receipt');
+                const getTabIcon = (t) => ({ 'itinerary': 'fa-solid fa-map-location-dot', 'info': 'fa-solid fa-circle-info', 'shopping': 'fa-solid fa-basket-shopping', 'expenses': 'fa-solid fa-coins' }[t]);
+
+                // 天氣 Icon 修復點：
                 const getWeatherIconClass = (code) => {
-                    if (code === 0) return 'fa-sun text-yellow-400';
-                    if (code === 1 || code === 2 || code === 3) return 'fa-cloud-sun text-yellow-300';
-                    if (code === 45 || code === 48) return 'fa-smog text-gray-400';
-                    if (code >= 51 && code <= 67) return 'fa-cloud-rain text-blue-400';
-                    if (code >= 71 && code <= 77) return 'fa-snowflake text-blue-200';
-                    if (code >= 95) return 'fa-bolt text-purple-500';
-                    return 'fa-cloud text-gray-400';
+                    if (code === 0) return 'fa-solid fa-sun text-yellow-400';
+                    if (code === 1 || code === 2 || code === 3) return 'fa-solid fa-cloud-sun text-yellow-300';
+                    if (code === 45 || code === 48) return 'fa-solid fa-smog text-gray-400';
+                    if (code >= 51 && code <= 67) return 'fa-solid fa-cloud-rain text-blue-400';
+                    if (code >= 71 && code <= 77) return 'fa-regular fa-snowflake text-blue-200';
+                    if (code >= 95) return 'fa-solid fa-bolt text-purple-500';
+                    return 'fa-solid fa-cloud text-gray-400';
                 };
 
                 const getWeatherDesc = (code) => {
@@ -337,7 +371,6 @@
                     }
                 };
 
-                // 監聽日期變動，自動更新天氣
                 watch(currentDayIndex, () => {
                     updateWeather();
                     nextTick(() => initSortable());
@@ -351,47 +384,31 @@
                         const dbShopping = await localforage.getItem('shoppingList');
                         const dbExpenses = await localforage.getItem('expenses');
 
+                        // 2. 修復白畫面：強制檢查資料型態，如果不是陣列就重置為 []
+                        shoppingList.value = Array.isArray(dbShopping) ? dbShopping : [];
+                        expenses.value = Array.isArray(dbExpenses) ? dbExpenses : [];
+                        
                         if (!dbItinerary) {
-                            const oldIt = localStorage.getItem('itineraryData');
-                            if (oldIt) {
-                                const parsed = JSON.parse(oldIt);
-                                await localforage.setItem('itineraryData', parsed); 
-                                Object.assign(itineraryData, parsed);
-                            } else {
-                                Object.assign(itineraryData, defaultItinerary);
-                            }
+                             const oldIt = localStorage.getItem('itineraryData');
+                             if(oldIt) {
+                                 try { const parsed = JSON.parse(oldIt); Object.assign(itineraryData, parsed); } 
+                                 catch(e) { Object.assign(itineraryData, defaultItinerary); }
+                             } else { Object.assign(itineraryData, defaultItinerary); }
                         } else {
                             Object.assign(itineraryData, dbItinerary);
                         }
-
-                        shoppingList.value = dbShopping || [];
-                        if (!dbShopping) {
-                             const oldShop = localStorage.getItem('shoppingList');
-                             if(oldShop) {
-                                 const parsed = JSON.parse(oldShop);
-                                 await localforage.setItem('shoppingList', parsed);
-                                 shoppingList.value = parsed;
-                             }
-                        }
-
-                        expenses.value = dbExpenses || [];
-                        if (!dbExpenses) {
-                             const oldExp = localStorage.getItem('expenses');
-                             if(oldExp) {
-                                 const parsed = JSON.parse(oldExp);
-                                 await localforage.setItem('expenses', parsed);
-                                 expenses.value = parsed;
-                             }
-                        }
                         
-                        // 資料載入完成後，抓取第一天的天氣
+                        // 資料載入後的二次檢查
+                        if(!shoppingList.value) shoppingList.value = [];
+                        if(!expenses.value) expenses.value = [];
+
                         updateWeather();
 
                     } catch (e) {
                         console.error('Data load error:', e);
                         Object.assign(itineraryData, defaultItinerary);
-                        shoppingList.value = [];
-                        expenses.value = [];
+                        shoppingList.value = []; // 出錯時重置
+                        expenses.value = [];     // 出錯時重置
                     } finally {
                         isLoadingData.value = false;
                         nextTick(() => initSortable());
@@ -411,16 +428,9 @@
                 };
 
                 const currentDayItinerary = computed(() => itineraryData[currentDayIndex.value] || []);
-                const totalExpenses = computed(() => expenses.value.reduce((sum, item) => sum + Number(item.amount), 0));
-                const cashExpenses = computed(() => expenses.value.filter(i => i.method === '現金').reduce((sum, item) => sum + Number(item.amount), 0));
-                const cardExpenses = computed(() => expenses.value.filter(i => i.method === '信用卡').reduce((sum, item) => sum + Number(item.amount), 0));
-
-                const getCategoryColor = (cat) => ({ spot: 'border-pink-400', food: 'border-orange-400', shopping: 'border-purple-400', flight: 'border-blue-400', hotel: 'border-indigo-400' }[cat] || 'border-gray-400');
-                const getCategoryBg = (cat) => ({ spot: 'bg-pink-400', food: 'bg-orange-400', shopping: 'bg-purple-400', flight: 'bg-blue-400', hotel: 'bg-indigo-400' }[cat] || 'bg-gray-400');
-                const getCategoryIcon = (cat) => ({ spot: 'fa-camera', food: 'fa-utensils', shopping: 'fa-bag-shopping', flight: 'fa-plane', hotel: 'fa-bed' }[cat] || 'fa-star');
-                const getTransportIcon = (t) => t === 'walk' ? 'fa-person-walking' : t === 'car' ? 'fa-car' : 'fa-train-subway';
-                const getExpenseIcon = (c) => ({ '飲食': 'fa-utensils', '交通': 'fa-train', '購物': 'fa-bag-shopping', '門票': 'fa-ticket' }[c] || 'fa-receipt');
-                const getTabIcon = (t) => ({ 'itinerary': 'fa-map-location-dot', 'info': 'fa-circle-info', 'shopping': 'fa-basket-shopping', 'expenses': 'fa-coins' }[t]);
+                const totalExpenses = computed(() => (expenses.value || []).reduce((sum, item) => sum + Number(item.amount || 0), 0));
+                const cashExpenses = computed(() => (expenses.value || []).filter(i => i.method === '現金').reduce((sum, item) => sum + Number(item.amount || 0), 0));
+                const cardExpenses = computed(() => (expenses.value || []).filter(i => i.method === '信用卡').reduce((sum, item) => sum + Number(item.amount || 0), 0));
 
                 const compressImage = (file) => {
                     return new Promise((resolve) => {
@@ -488,7 +498,7 @@
                 };
                 
                 const saveItinerary = async () => {
-                    editForm.icon = getCategoryIcon(editForm.category);
+                    editForm.icon = getCategoryIcon(editForm.category); // 這裡會取得正確的 fa-solid class
                     if(editForm.images.length > 0) editForm.image = editForm.images[0]; 
                     else editForm.image = null;
 
@@ -538,3 +548,4 @@
     <style>.label-text { @apply block text-xs font-bold text-gray-400 mb-1 ml-1; } .input-field { @apply w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-sakura-red focus:bg-white transition-colors; } .slide-up-animation { animation: slideUp 0.3s ease-out; } @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
 </body>
 </html>
+
