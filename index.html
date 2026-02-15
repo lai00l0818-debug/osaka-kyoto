@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (無限容量版)</title>
+    <title>關西之旅 2026 (即時天氣版)</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
     <script>
@@ -36,8 +37,8 @@
         .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #e94e59; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         [v-cloak] { display: none; }
-        /* Loading Overlay */
-        .page-loading { position: fixed; inset: 0; bg-white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
+        .page-loading { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
+        .weather-spin { animation: spin 2s linear infinite; }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
@@ -46,8 +47,7 @@
         
         <div v-if="isLoadingData" class="page-loading">
             <div class="loader w-10 h-10 border-4 mb-4 text-sakura-red"></div>
-            <p class="text-gray-500 font-bold">正在升級資料庫...</p>
-            <p class="text-xs text-gray-400 mt-2">首次載入可能需要幾秒鐘轉移舊資料</p>
+            <p class="text-gray-500 font-bold">載入行程資料中...</p>
         </div>
 
         <header class="relative h-[250px] md:h-[300px] bg-gray-200 overflow-hidden shrink-0 group">
@@ -82,12 +82,23 @@
 
                     <div class="p-4 md:p-8 grid md:grid-cols-12 gap-6">
                         <div class="md:col-span-3 lg:col-span-3">
-                            <div class="p-6 bg-gradient-to-r from-blue-50 to-white rounded-2xl flex md:flex-col items-center justify-between md:justify-center card-shadow border border-blue-50 sticky top-32">
+                            <div class="p-6 bg-gradient-to-br from-blue-50 to-white rounded-2xl flex md:flex-col items-center justify-between md:justify-center card-shadow border border-blue-100 sticky top-32">
                                 <div class="md:text-center md:mb-4">
-                                    <div class="text-sm text-gray-400 mb-1"><i class="fa-solid fa-location-dot mr-1"></i>{{ days[currentDayIndex].location }}</div>
-                                    <div class="flex items-baseline md:justify-center"><span class="text-4xl font-light text-gray-700">18°</span></div>
+                                    <div class="text-sm text-gray-400 mb-1 flex items-center justify-center md:justify-center">
+                                        <i class="fa-solid fa-location-dot mr-1 text-sakura-red"></i>
+                                        {{ days[currentDayIndex].location }}
+                                    </div>
+                                    <div class="flex items-baseline md:justify-center">
+                                        <span v-if="weather.loading" class="text-2xl text-gray-300"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                                        <span v-else class="text-4xl font-light text-gray-700">{{ weather.temp }}°</span>
+                                        <span v-if="!weather.loading" class="text-xs text-gray-400 ml-1">現在</span>
+                                    </div>
+                                    <div v-if="!weather.loading" class="text-xs text-gray-400 mt-1 md:mt-2 text-center">{{ weather.desc }}</div>
                                 </div>
-                                <div class="text-center text-blue-300"><i class="fa-solid fa-cloud-sun text-5xl"></i></div>
+                                <div class="text-center">
+                                    <i v-if="weather.loading" class="fa-solid fa-cloud text-gray-200 text-5xl"></i>
+                                    <i v-else :class="['text-5xl drop-shadow-md transition-all duration-500', weather.iconClass]"></i>
+                                </div>
                             </div>
                         </div>
 
@@ -133,15 +144,6 @@
                 </div>
 
                 <div v-if="currentTab === 'info'" class="space-y-8 pb-10 p-4 md:p-8">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-700 mb-6 flex items-center"><i class="fa-solid fa-camera-retro mr-3 text-sakura-red"></i>景點導覽</h3>
-                        <div class="flex overflow-x-auto no-scrollbar space-x-6 pb-4">
-                            <div v-for="spot in attractions" :key="spot.name" class="flex-shrink-0 w-72 md:w-80 bg-white rounded-2xl overflow-hidden card-shadow group cursor-pointer hover:shadow-xl" @click="openMap(spot.name)">
-                                <div class="h-48 overflow-hidden relative"><img :src="spot.image" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"><div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-4 pt-10"><div class="text-white font-bold text-xl text-shadow">{{ spot.name }}</div></div></div>
-                                <div class="p-5"><div class="text-xs text-sakura-red font-bold mb-2 uppercase border border-sakura-red/30 inline-block px-2 py-0.5 rounded">{{ spot.tag }}</div><p class="text-sm text-gray-500">{{ spot.desc }}</p></div>
-                            </div>
-                        </div>
-                    </div>
                     <div class="bg-white rounded-2xl p-6 card-shadow">
                         <h3 class="text-lg font-bold text-gray-700 mb-4"><i class="fa-solid fa-bed mr-2 text-purple-400"></i>住宿資訊</h3>
                         <div class="grid md:grid-cols-2 gap-4">
@@ -150,6 +152,22 @@
                                 <div class="flex space-x-3 mt-3"><a :href="'https://www.google.com/maps/search/?api=1&query=' + hotel.name" target="_blank" class="flex-1 bg-white border border-gray-200 text-center py-2 rounded-lg text-sm text-gray-600">導航</a></div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-6 card-shadow border-t-4 border-sakura-red">
+                        <h3 class="text-lg font-bold text-gray-700 mb-4"><i class="fa-solid fa-calculator mr-2 text-gray-400"></i>即時匯率</h3>
+                        <div class="flex items-center space-x-4 mb-4">
+                            <div class="flex-1">
+                                <label class="text-xs text-gray-400 block mb-1">日幣 (JPY)</label>
+                                <input type="number" v-model="calcJpy" class="w-full text-3xl font-bold border-b border-gray-200 focus:border-sakura-red outline-none py-1" placeholder="0">
+                            </div>
+                            <i class="fa-solid fa-arrow-right-arrow-left text-gray-300"></i>
+                            <div class="flex-1">
+                                <label class="text-xs text-gray-400 block mb-1">台幣 (TWD)</label>
+                                <div class="text-3xl font-bold text-gray-700 py-1">{{ calcTwd }}</div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400 text-right">匯率基準: 0.22</p>
                     </div>
                 </div>
 
@@ -188,7 +206,9 @@
                     <div><label class="label-text">名稱</label><input type="text" v-model="editForm.name" class="input-field" placeholder="行程名稱"></div>
                     <div class="grid grid-cols-2 gap-4"><div><label class="label-text">時間</label><input type="time" v-model="editForm.time" class="input-field"></div><div><label class="label-text">交通時間(分)</label><input type="number" v-model="editForm.transportTime" class="input-field"></div></div>
                     <div><label class="label-text">交通方式</label><select v-model="editForm.transportType" class="input-field"><option value="walk">步行</option><option value="train">大眾運輸</option><option value="car">開車/接送</option></select></div>
-                    <div v-if="editForm.category === 'spot'"><div><label class="label-text">門票</label><input type="text" v-model="editForm.ticket" class="input-field"></div></div>
+                    
+                    <div><label class="label-text">費用 / 門票</label><input type="text" v-model="editForm.ticket" class="input-field" placeholder="例如：600円"></div>
+                    
                     <div><label class="label-text">備註</label><textarea v-model="editForm.note" class="input-field h-20"></textarea></div>
                     
                     <div>
@@ -243,11 +263,10 @@
     </div>
 
     <script>
-        const { createApp, ref, computed, onMounted, nextTick, reactive } = Vue;
+        const { createApp, ref, computed, onMounted, nextTick, reactive, watch } = Vue;
 
         createApp({
             setup() {
-                // Config LocalForage (The big storage solution)
                 localforage.config({ name: 'TripApp', storeName: 'trip_data' });
 
                 const currentTab = ref('itinerary');
@@ -255,49 +274,88 @@
                 const showEditModal = ref(false), showShoppingModal = ref(false), showExpenseModal = ref(false);
                 const isEditing = ref(false), editingIndex = ref(-1), isCompressing = ref(false), isLoadingData = ref(true);
 
+                // 1. 在這裡加入了經緯度 (lat, lng) 供天氣 API 使用
                 const days = [
-                    { date: '11', week: 'Fri', fullDate: '2026-04-11', location: '大阪' }, { date: '12', week: 'Sat', fullDate: '2026-04-12', location: '大阪' },
-                    { date: '13', week: 'Sun', fullDate: '2026-04-13', location: '環球影城' }, { date: '14', week: 'Mon', fullDate: '2026-04-14', location: '大阪/京都' },
-                    { date: '15', week: 'Tue', fullDate: '2026-04-15', location: '京都' }, { date: '16', week: 'Wed', fullDate: '2026-04-16', location: '京都' },
-                    { date: '17', week: 'Thu', fullDate: '2026-04-17', location: '京都/大阪' }, { date: '18', week: 'Fri', fullDate: '2026-04-18', location: '大阪/堺' },
-                    { date: '19', week: 'Sat', fullDate: '2026-04-19', location: '關西機場' }
+                    { date: '11', week: 'Fri', fullDate: '2026-04-11', location: '大阪', lat: 34.6937, lng: 135.5023 },
+                    { date: '12', week: 'Sat', fullDate: '2026-04-12', location: '大阪', lat: 34.6937, lng: 135.5023 },
+                    { date: '13', week: 'Sun', fullDate: '2026-04-13', location: '環球影城', lat: 34.6654, lng: 135.4323 }, // USJ 位置
+                    { date: '14', week: 'Mon', fullDate: '2026-04-14', location: '大阪/京都', lat: 35.0116, lng: 135.7681 }, // 以京都為準
+                    { date: '15', week: 'Tue', fullDate: '2026-04-15', location: '京都', lat: 35.0116, lng: 135.7681 },
+                    { date: '16', week: 'Wed', fullDate: '2026-04-16', location: '京都', lat: 35.0116, lng: 135.7681 },
+                    { date: '17', week: 'Thu', fullDate: '2026-04-17', location: '京都/大阪', lat: 34.6937, lng: 135.5023 },
+                    { date: '18', week: 'Fri', fullDate: '2026-04-18', location: '大阪/堺', lat: 34.5733, lng: 135.4830 }, // 堺市
+                    { date: '19', week: 'Sat', fullDate: '2026-04-19', location: '關西機場', lat: 34.4320, lng: 135.2304 }
                 ];
                 
                 const hotels = [{ dates: '4/11-14', name: 'BRACKETS HOTEL' }, { dates: '4/14-17', name: 'Ms Hotel' }, { dates: '4/17-18', name: 'Hotel Meldia' }, { dates: '4/18-19', name: 'EZ HOTEL' }];
-                const attractions = [
-                    {name:'大阪城', tag:'地標', desc:'大阪象徵，歷史悠久。', image:'https://images.unsplash.com/photo-1590253232502-122fdf9382e7'},
-                    {name:'環球影城', tag:'樂園', desc:'任天堂、哈利波特。', image:'https://images.unsplash.com/photo-1624601476296-3ac93782eb83'},
-                    {name:'道頓堀', tag:'美食', desc:'固力果跑跑人，美食街。', image:'https://images.unsplash.com/photo-1595500609384-56c6628c6143'},
-                    {name:'清水寺', tag:'古蹟', desc:'京都最著名古老寺院。', image:'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e'}
-                ];
-
                 const defaultItinerary = { 0: [{ id: 1, category: 'flight', name: 'TPE -> KIX', time: '18:00', note: '抵達關西', transportTime: 0, transportType: 'car', isFlight: true, images: [] }] };
 
-                // Reactive State
                 const itineraryData = reactive({});
                 const shoppingList = ref([]);
                 const expenses = ref([]);
+                const weather = reactive({ temp: '--', code: 0, desc: '載入中...', iconClass: 'fa-cloud', loading: false });
 
                 const editForm = reactive({ id: null, category: 'spot', name: '', time: '', note: '', ticket: '', transportTime: 30, transportType: 'train', images: [], image: null });
                 const newShoppingItem = reactive({ name: '', image: null, checked: false });
                 const newExpense = reactive({ category: '飲食', name: '', amount: '', method: '現金', date: new Date().toISOString().split('T')[0] });
+                const calcJpy = ref(null);
+                const calcTwd = computed(() => calcJpy.value ? (calcJpy.value * 0.22).toFixed(0) : 0);
 
-                // --- Data Migration & Loading (Critical Update) ---
+                // --- 天氣 API 相關邏輯 ---
+                const getWeatherIconClass = (code) => {
+                    if (code === 0) return 'fa-sun text-yellow-400';
+                    if (code === 1 || code === 2 || code === 3) return 'fa-cloud-sun text-yellow-300';
+                    if (code === 45 || code === 48) return 'fa-smog text-gray-400';
+                    if (code >= 51 && code <= 67) return 'fa-cloud-rain text-blue-400';
+                    if (code >= 71 && code <= 77) return 'fa-snowflake text-blue-200';
+                    if (code >= 95) return 'fa-bolt text-purple-500';
+                    return 'fa-cloud text-gray-400';
+                };
+
+                const getWeatherDesc = (code) => {
+                    const map = { 0:'晴朗', 1:'大致晴朗', 2:'多雲', 3:'陰天', 45:'霧', 51:'毛毛雨', 61:'小雨', 63:'雨', 95:'雷雨' };
+                    return map[code] || '多雲';
+                };
+
+                const updateWeather = async () => {
+                    weather.loading = true;
+                    const day = days[currentDayIndex.value];
+                    try {
+                        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${day.lat}&longitude=${day.lng}&current_weather=true&timezone=Asia%2FTokyo`);
+                        const data = await res.json();
+                        if(data.current_weather) {
+                            weather.temp = data.current_weather.temperature;
+                            weather.code = data.current_weather.weathercode;
+                            weather.iconClass = getWeatherIconClass(weather.code);
+                            weather.desc = getWeatherDesc(weather.code);
+                        }
+                    } catch (e) {
+                        console.error('Weather error:', e);
+                        weather.temp = 'N/A';
+                    } finally {
+                        weather.loading = false;
+                    }
+                };
+
+                // 監聽日期變動，自動更新天氣
+                watch(currentDayIndex, () => {
+                    updateWeather();
+                    nextTick(() => initSortable());
+                });
+
                 const loadData = async () => {
                     try {
                         isLoadingData.value = true;
                         
-                        // 1. Try Load from Big Storage (LocalForage)
                         const dbItinerary = await localforage.getItem('itineraryData');
                         const dbShopping = await localforage.getItem('shoppingList');
                         const dbExpenses = await localforage.getItem('expenses');
 
-                        // 2. If empty, check old localStorage for migration
                         if (!dbItinerary) {
                             const oldIt = localStorage.getItem('itineraryData');
                             if (oldIt) {
                                 const parsed = JSON.parse(oldIt);
-                                await localforage.setItem('itineraryData', parsed); // Migrate
+                                await localforage.setItem('itineraryData', parsed); 
                                 Object.assign(itineraryData, parsed);
                             } else {
                                 Object.assign(itineraryData, defaultItinerary);
@@ -306,6 +364,7 @@
                             Object.assign(itineraryData, dbItinerary);
                         }
 
+                        shoppingList.value = dbShopping || [];
                         if (!dbShopping) {
                              const oldShop = localStorage.getItem('shoppingList');
                              if(oldShop) {
@@ -313,10 +372,9 @@
                                  await localforage.setItem('shoppingList', parsed);
                                  shoppingList.value = parsed;
                              }
-                        } else {
-                            shoppingList.value = dbShopping;
                         }
 
+                        expenses.value = dbExpenses || [];
                         if (!dbExpenses) {
                              const oldExp = localStorage.getItem('expenses');
                              if(oldExp) {
@@ -324,13 +382,16 @@
                                  await localforage.setItem('expenses', parsed);
                                  expenses.value = parsed;
                              }
-                        } else {
-                            expenses.value = dbExpenses;
                         }
+                        
+                        // 資料載入完成後，抓取第一天的天氣
+                        updateWeather();
 
                     } catch (e) {
                         console.error('Data load error:', e);
                         Object.assign(itineraryData, defaultItinerary);
+                        shoppingList.value = [];
+                        expenses.value = [];
                     } finally {
                         isLoadingData.value = false;
                         nextTick(() => initSortable());
@@ -339,10 +400,8 @@
 
                 onMounted(loadData);
 
-                // --- Async Saving ---
                 const saveToDB = async () => {
                     try {
-                        // Use structuredClone proxy removal technique or simple copy
                         await localforage.setItem('itineraryData', JSON.parse(JSON.stringify(itineraryData)));
                         await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value)));
                         await localforage.setItem('expenses', JSON.parse(JSON.stringify(expenses.value)));
@@ -463,16 +522,15 @@
                     }});
                 };
                 
-                Vue.watch(currentDayIndex, () => nextTick(() => initSortable()));
-
                 return {
-                    currentTab, currentDayIndex, days, hotels, attractions, currentDayItinerary, totalExpenses, cashExpenses, cardExpenses,
+                    currentTab, currentDayIndex, days, hotels, currentDayItinerary, totalExpenses, cashExpenses, cardExpenses,
                     showEditModal, showShoppingModal, showExpenseModal, editForm, newShoppingItem, newExpense, isEditing, isCompressing, isLoadingData,
                     getCategoryColor, getCategoryBg, getCategoryIcon, getTransportIcon, getExpenseIcon, getTabIcon,
                     handleFabClick, openAddModal, editItem, saveItinerary, confirmDelete, closeModal,
                     saveShoppingItem, deleteShoppingItem, handleShoppingImageUpload,
                     saveExpense, deleteExpense,
-                    openMap, openImage, handleItineraryImageUpload, removeImage
+                    openMap, openImage, handleItineraryImageUpload, removeImage,
+                    calcJpy, calcTwd, weather
                 };
             }
         }).mount('#app');
