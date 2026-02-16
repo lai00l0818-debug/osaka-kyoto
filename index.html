@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (可拖曳排序版)</title>
+    <title>關西之旅 2026 (最終完美版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -44,24 +44,32 @@
         .calc-btn-op { @apply bg-orange-50 text-orange-500 border-orange-100 active:bg-orange-100; }
         .calc-btn-eq { @apply bg-sakura-red text-white active:bg-sakura-dark shadow-md; }
 
-        /* 拖曳時的樣式 - 讓它看起來像浮起來 */
+        /* --- 拖曳排序關鍵修復樣式 --- */
+        
+        /* 1. 拖曳時留在原位的影子 (半透明虛線) */
         .sortable-ghost {
             opacity: 0.4;
-            background-color: #fdf2f8; /* 淺粉色背景 */
+            background-color: #fff0f5;
             border: 2px dashed #ffb7b2;
         }
-        .sortable-chosen {
-            background-color: #fff;
-            transform: scale(1.02);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        .sortable-drag {
-            opacity: 1;
+
+        /* 2. 跟著手指移動的卡片 (強制不透明，確保看得到) */
+        .sortable-fallback {
+            opacity: 1 !important;
             background-color: white;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: scale(1.02);
+            border-radius: 1rem;
+            cursor: grabbing;
         }
-        /* 拖曳把手樣式優化 */
+
+        /* 3. 拖曳把手設定 (防止手機滾動) */
         .handle {
-            touch-action: none; /* 防止拖曳時觸發滾動 */
+            touch-action: none;
+            cursor: grab;
+        }
+        .handle:active {
+            cursor: grabbing;
         }
     </style>
 </head>
@@ -140,14 +148,14 @@
 
                                 <div @click="openMap(item.name)" :class="['relative bg-white rounded-2xl p-6 card-shadow border-l-4 cursor-pointer active:scale-[0.99] transition-transform hover:shadow-lg', getCategoryColor(item.category)]">
                                     
-                                    <div class="absolute top-4 right-4 text-gray-300 handle cursor-move hover:text-gray-500 p-2 z-20">
+                                    <div class="absolute top-4 right-4 text-gray-300 handle cursor-move hover:text-gray-500 p-2 z-20 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full shadow-sm">
                                         <i class="fa-solid fa-grip-lines text-xl"></i>
                                     </div>
 
                                     <div class="flex items-start">
                                         <div :class="['w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0 shadow-md text-lg', getCategoryBg(item.category)]"><i :class="item.icon"></i></div>
                                         <div class="ml-6 flex-1 overflow-hidden">
-                                            <div class="flex justify-between items-baseline pr-8"><h3 class="font-bold text-gray-700 text-xl">{{ item.name }}</h3></div>
+                                            <div class="flex justify-between items-baseline pr-12"><h3 class="font-bold text-gray-700 text-xl">{{ item.name }}</h3></div>
                                             <div class="text-sakura-red font-medium text-base mt-1">{{ item.time }}</div>
                                             <div class="flex flex-wrap gap-2 mt-3" v-if="item.ticket || item.openTime">
                                                 <span v-if="item.ticket" class="text-sm bg-yellow-50 text-yellow-600 px-2 py-1 rounded border border-yellow-100"><i class="fa-solid fa-ticket mr-1"></i>{{ item.ticket }}</span>
@@ -659,24 +667,35 @@
                 const openImage = (u) => window.open(u, '_blank');
                 const closeModal = () => showEditModal.value = false;
 
-                // 初始化拖曳功能
+                // 初始化拖曳功能 (手機版修復核心)
                 const initSortable = () => {
                     const el = document.getElementById('itinerary-list');
                     if (el) {
-                        // 如果已經有 instance，先銷毀避免重複
                         if(el._sortable) el._sortable.destroy();
 
                         el._sortable = Sortable.create(el, {
-                            handle: '.handle', // 指定只能拉「把手」
-                            animation: 150,
-                            ghostClass: 'sortable-ghost',  // 拖曳時留下的影子樣式
-                            chosenClass: 'sortable-chosen', // 被選中的樣式
-                            dragClass: 'sortable-drag',    // 正在被拖著跑的樣式
+                            handle: '.handle', 
+                            animation: 250,
+                            
+                            // --- 關鍵設定：強制模擬拖曳 (解決手機問題) ---
+                            forceFallback: true,      
+                            fallbackClass: "sortable-fallback",
+                            fallbackOnBody: true,     
+                            
+                            // --- 觸控手感優化 ---
+                            delay: 150,               
+                            delayOnTouchOnly: true,   
+                            touchStartThreshold: 5,   
+                            
+                            ghostClass: 'sortable-ghost',
+                            
                             onEnd: async (evt) => {
-                                // 拖曳結束後更新資料數據
+                                if (evt.oldIndex === evt.newIndex) return;
+
                                 const list = itineraryData[currentDayIndex.value];
                                 const item = list.splice(evt.oldIndex, 1)[0];
                                 list.splice(evt.newIndex, 0, item);
+                                
                                 await saveToDB();
                             }
                         });
