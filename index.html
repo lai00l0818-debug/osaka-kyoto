@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (最終完美版)</title>
+    <title>關西之旅 2026 (美食清單版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -39,38 +39,13 @@
         [v-cloak] { display: none; }
         .page-loading { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
         
-        /* 計算機按鈕樣式 */
         .calc-btn { @apply h-12 rounded-lg bg-gray-50 text-gray-600 font-bold active:bg-gray-200 transition-colors shadow-sm border border-gray-100; }
         .calc-btn-op { @apply bg-orange-50 text-orange-500 border-orange-100 active:bg-orange-100; }
         .calc-btn-eq { @apply bg-sakura-red text-white active:bg-sakura-dark shadow-md; }
 
-        /* --- 拖曳排序關鍵修復樣式 --- */
-        
-        /* 1. 拖曳時留在原位的影子 (半透明虛線) */
-        .sortable-ghost {
-            opacity: 0.4;
-            background-color: #fff0f5;
-            border: 2px dashed #ffb7b2;
-        }
-
-        /* 2. 跟著手指移動的卡片 (強制不透明，確保看得到) */
-        .sortable-fallback {
-            opacity: 1 !important;
-            background-color: white;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            transform: scale(1.02);
-            border-radius: 1rem;
-            cursor: grabbing;
-        }
-
-        /* 3. 拖曳把手設定 (防止手機滾動) */
-        .handle {
-            touch-action: none;
-            cursor: grab;
-        }
-        .handle:active {
-            cursor: grabbing;
-        }
+        .sortable-ghost { opacity: 0.4; background-color: #fff0f5; border: 2px dashed #ffb7b2; }
+        .sortable-fallback { opacity: 1 !important; background-color: white; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); transform: scale(1.02); border-radius: 1rem; cursor: grabbing; }
+        .handle { touch-action: none; cursor: grab; } .handle:active { cursor: grabbing; }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
@@ -90,10 +65,10 @@
                 <h1 class="text-4xl md:text-5xl font-bold tracking-widest text-shadow">關西之旅</h1>
                 <p class="text-sm md:text-base font-medium opacity-90 mt-2 text-shadow"><i class="fa-regular fa-calendar mr-2"></i>2026.04.11 - 04.19</p>
             </div>
-            <div class="absolute bottom-6 right-6 md:right-10 flex space-x-4 z-20">
-                <button v-for="tab in ['itinerary', 'info', 'shopping', 'expenses']" :key="tab" @click="currentTab = tab" 
-                    :class="['w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm', currentTab === tab ? 'bg-sakura-red text-white scale-110' : 'bg-white/90 text-gray-500 hover:bg-white']">
-                    <i :class="getTabIcon(tab)" class="text-lg"></i>
+            <div class="absolute bottom-6 right-6 md:right-10 flex space-x-3 z-20 overflow-x-auto no-scrollbar max-w-[60vw] pr-2">
+                <button v-for="tab in ['itinerary', 'food', 'shopping', 'info', 'expenses']" :key="tab" @click="currentTab = tab" 
+                    :class="['w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm', currentTab === tab ? 'bg-sakura-red text-white scale-110' : 'bg-white/90 text-gray-500 hover:bg-white']">
+                    <i :class="getTabIcon(tab)" class="text-base"></i>
                 </button>
             </div>
         </header>
@@ -116,21 +91,11 @@
                         <div class="md:col-span-3 lg:col-span-3">
                             <div class="p-6 bg-gradient-to-br from-blue-50 to-white rounded-2xl flex md:flex-col items-center justify-between md:justify-center card-shadow border border-blue-100 sticky top-32">
                                 <div class="md:text-center md:mb-4">
-                                    <div class="text-sm text-gray-400 mb-1 flex items-center justify-center md:justify-center">
-                                        <i class="fa-solid fa-location-dot mr-1 text-sakura-red"></i>
-                                        {{ days[currentDayIndex].location }}
-                                    </div>
-                                    <div class="flex items-baseline md:justify-center">
-                                        <span v-if="weather.loading" class="text-2xl text-gray-300"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
-                                        <span v-else class="text-4xl font-light text-gray-700">{{ weather.temp }}°</span>
-                                        <span v-if="!weather.loading" class="text-xs text-gray-400 ml-1">現在</span>
-                                    </div>
+                                    <div class="text-sm text-gray-400 mb-1 flex items-center justify-center md:justify-center"><i class="fa-solid fa-location-dot mr-1 text-sakura-red"></i>{{ days[currentDayIndex].location }}</div>
+                                    <div class="flex items-baseline md:justify-center"><span v-if="weather.loading" class="text-2xl text-gray-300"><i class="fa-solid fa-circle-notch fa-spin"></i></span><span v-else class="text-4xl font-light text-gray-700">{{ weather.temp }}°</span><span v-if="!weather.loading" class="text-xs text-gray-400 ml-1">現在</span></div>
                                     <div v-if="!weather.loading" class="text-xs text-gray-400 mt-1 md:mt-2 text-center">{{ weather.desc }}</div>
                                 </div>
-                                <div class="text-center">
-                                    <i v-if="weather.loading" class="fa-solid fa-cloud text-gray-200 text-5xl"></i>
-                                    <i v-else :class="['text-5xl drop-shadow-md transition-all duration-500', weather.iconClass]"></i>
-                                </div>
+                                <div class="text-center"><i v-if="weather.loading" class="fa-solid fa-cloud text-gray-200 text-5xl"></i><i v-else :class="['text-5xl drop-shadow-md transition-all duration-500', weather.iconClass]"></i></div>
                             </div>
                         </div>
 
@@ -138,40 +103,77 @@
                             <div v-for="(item, index) in currentDayItinerary" :key="item.id" class="relative group itinerary-item">
                                 <div v-if="index > 0" class="flex items-center justify-center py-2 relative">
                                     <div class="h-8 w-0.5 bg-gray-200 absolute top-0 bottom-0 z-0"></div>
-                                    <div class="bg-white border border-gray-200 text-gray-400 text-xs px-3 py-1 rounded-full z-10 flex items-center space-x-1 shadow-sm">
-                                        <i :class="getTransportIcon(item.transportType)"></i><span>{{ item.transportTime }} min</span>
-                                    </div>
+                                    <div class="bg-white border border-gray-200 text-gray-400 text-xs px-3 py-1 rounded-full z-10 flex items-center space-x-1 shadow-sm"><i :class="getTransportIcon(item.transportType)"></i><span>{{ item.transportTime }} min</span></div>
                                 </div>
-                                <div v-else-if="index === 0 && !item.isFlight" class="flex items-center justify-center py-2 pb-4">
-                                    <div class="text-xs text-gray-400 bg-gray-200 px-3 py-1 rounded-full"><i class="fa-solid fa-hotel mr-1"></i> 從飯店出發約 {{ item.transportTime }} min</div>
-                                </div>
+                                <div v-else-if="index === 0 && !item.isFlight" class="flex items-center justify-center py-2 pb-4"><div class="text-xs text-gray-400 bg-gray-200 px-3 py-1 rounded-full"><i class="fa-solid fa-hotel mr-1"></i> 從飯店出發約 {{ item.transportTime }} min</div></div>
 
                                 <div @click="openMap(item.name)" :class="['relative bg-white rounded-2xl p-6 card-shadow border-l-4 cursor-pointer active:scale-[0.99] transition-transform hover:shadow-lg', getCategoryColor(item.category)]">
-                                    
-                                    <div class="absolute top-4 right-4 text-gray-300 handle cursor-move hover:text-gray-500 p-2 z-20 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full shadow-sm">
-                                        <i class="fa-solid fa-grip-lines text-xl"></i>
-                                    </div>
-
+                                    <div class="absolute top-4 right-4 text-gray-300 handle cursor-move hover:text-gray-500 p-2 z-20 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full shadow-sm"><i class="fa-solid fa-grip-lines text-xl"></i></div>
                                     <div class="flex items-start">
                                         <div :class="['w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0 shadow-md text-lg', getCategoryBg(item.category)]"><i :class="item.icon"></i></div>
                                         <div class="ml-6 flex-1 overflow-hidden">
                                             <div class="flex justify-between items-baseline pr-12"><h3 class="font-bold text-gray-700 text-xl">{{ item.name }}</h3></div>
                                             <div class="text-sakura-red font-medium text-base mt-1">{{ item.time }}</div>
-                                            <div class="flex flex-wrap gap-2 mt-3" v-if="item.ticket || item.openTime">
-                                                <span v-if="item.ticket" class="text-sm bg-yellow-50 text-yellow-600 px-2 py-1 rounded border border-yellow-100"><i class="fa-solid fa-ticket mr-1"></i>{{ item.ticket }}</span>
-                                            </div>
+                                            <div class="flex flex-wrap gap-2 mt-3" v-if="item.ticket || item.openTime"><span v-if="item.ticket" class="text-sm bg-yellow-50 text-yellow-600 px-2 py-1 rounded border border-yellow-100"><i class="fa-solid fa-ticket mr-1"></i>{{ item.ticket }}</span></div>
                                             <p v-if="item.note" class="text-sm text-gray-500 mt-3 bg-gray-50 p-3 rounded-lg">{{ item.note }}</p>
-
-                                            <div v-if="item.images && item.images.length > 0" class="mt-4">
-                                                <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2">
-                                                    <img v-for="(img, imgIdx) in item.images" :key="imgIdx" :src="img" class="h-40 w-auto rounded-xl border border-gray-100 shadow-sm cursor-pointer hover:opacity-90 transition-opacity" @click.stop="openImage(img)">
-                                                </div>
-                                            </div>
+                                            <div v-if="item.images && item.images.length > 0" class="mt-4"><div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2"><img v-for="(img, imgIdx) in item.images" :key="imgIdx" :src="img" class="h-40 w-auto rounded-xl border border-gray-100 shadow-sm cursor-pointer hover:opacity-90 transition-opacity" @click.stop="openImage(img)"></div></div>
                                             <div v-else-if="item.image" class="mt-4"><img :src="item.image" class="w-full md:w-2/3 h-48 object-cover rounded-xl border border-gray-100 shadow-sm"></div>
                                         </div>
                                     </div>
-                                    <div class="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button @click.stop="editItem(item, index)" class="text-gray-400 hover:text-blue-500 p-2 bg-gray-50 rounded-full"><i class="fa-solid fa-pen"></i></button>
+                                    <div class="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"><button @click.stop="editItem(item, index)" class="text-gray-400 hover:text-blue-500 p-2 bg-gray-50 rounded-full"><i class="fa-solid fa-pen"></i></button></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="currentTab === 'food'" class="p-4 md:p-8 pb-24">
+                    <div v-if="foodList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[50vh]">
+                        <i class="fa-solid fa-utensils text-6xl text-gray-200 mb-4"></i>
+                        <p>尚無美食清單</p>
+                        <p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p>
+                    </div>
+
+                    <div v-else class="space-y-8">
+                        <div v-if="osakaFoods.length > 0">
+                            <h3 class="text-xl font-bold text-gray-700 mb-4 flex items-center border-l-4 border-blue-400 pl-3">
+                                <span class="mr-2">🏯</span>大阪美食
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div v-for="food in osakaFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow">
+                                    <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden relative">
+                                        <img v-if="food.image" :src="food.image" class="w-full h-full object-cover">
+                                        <div v-else class="text-gray-300 flex flex-col items-center"><i class="fa-solid fa-burger text-3xl mb-1"></i><span class="text-xs">無圖片</span></div>
+                                        <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="flex justify-between items-start">
+                                            <h4 class="font-bold text-gray-800 text-lg truncate flex-1">{{ food.name }}</h4>
+                                            <i class="fa-solid fa-location-arrow text-gray-300 text-sm ml-2"></i>
+                                        </div>
+                                        <p v-if="food.note" class="text-sm text-gray-500 mt-2 bg-gray-50 p-2 rounded">{{ food.note }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="kyotoFoods.length > 0">
+                            <h3 class="text-xl font-bold text-gray-700 mb-4 flex items-center border-l-4 border-red-400 pl-3">
+                                <span class="mr-2">⛩️</span>京都美食
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div v-for="food in kyotoFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow">
+                                    <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden relative">
+                                        <img v-if="food.image" :src="food.image" class="w-full h-full object-cover">
+                                        <div v-else class="text-gray-300 flex flex-col items-center"><i class="fa-solid fa-bowl-food text-3xl mb-1"></i><span class="text-xs">無圖片</span></div>
+                                        <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="flex justify-between items-start">
+                                            <h4 class="font-bold text-gray-800 text-lg truncate flex-1">{{ food.name }}</h4>
+                                            <i class="fa-solid fa-location-arrow text-gray-300 text-sm ml-2"></i>
+                                        </div>
+                                        <p v-if="food.note" class="text-sm text-gray-500 mt-2 bg-gray-50 p-2 rounded">{{ food.note }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -180,120 +182,52 @@
                 </div>
 
                 <div v-if="currentTab === 'info'" class="space-y-8 pb-10 p-4 md:p-8">
-                    
                     <div class="bg-white rounded-2xl p-6 card-shadow border-t-4 border-sakura-red">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-bold text-gray-700"><i class="fa-solid fa-calculator mr-2 text-gray-400"></i>匯率計算機</h3>
-                            <div class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">匯率: 0.22</div>
-                        </div>
-                        
+                        <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-gray-700"><i class="fa-solid fa-calculator mr-2 text-gray-400"></i>匯率計算機</h3><div class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">匯率: 0.22</div></div>
                         <div class="bg-gray-100 rounded-xl p-4 mb-4 text-right">
                             <div class="text-gray-500 text-sm h-5 overflow-hidden">{{ calcFormula || ' ' }}</div>
                             <div class="text-3xl font-bold text-gray-800 break-all">{{ calcInput || '0' }} <span class="text-sm font-normal text-gray-400">JPY</span></div>
                             <div class="text-sakura-red font-bold text-xl mt-1 border-t border-gray-200 pt-1">{{ calcResultTwd }} <span class="text-xs font-normal">TWD</span></div>
                         </div>
-
                         <div class="grid grid-cols-4 gap-2">
-                            <button @click="appendCalc('7')" class="calc-btn">7</button>
-                            <button @click="appendCalc('8')" class="calc-btn">8</button>
-                            <button @click="appendCalc('9')" class="calc-btn">9</button>
-                            <button @click="appendCalc('/')" class="calc-btn calc-btn-op"><i class="fa-solid fa-divide"></i></button>
-                            
-                            <button @click="appendCalc('4')" class="calc-btn">4</button>
-                            <button @click="appendCalc('5')" class="calc-btn">5</button>
-                            <button @click="appendCalc('6')" class="calc-btn">6</button>
-                            <button @click="appendCalc('*')" class="calc-btn calc-btn-op"><i class="fa-solid fa-xmark"></i></button>
-                            
-                            <button @click="appendCalc('1')" class="calc-btn">1</button>
-                            <button @click="appendCalc('2')" class="calc-btn">2</button>
-                            <button @click="appendCalc('3')" class="calc-btn">3</button>
-                            <button @click="appendCalc('-')" class="calc-btn calc-btn-op"><i class="fa-solid fa-minus"></i></button>
-                            
-                            <button @click="appendCalc('0')" class="calc-btn">0</button>
-                            <button @click="appendCalc('.')" class="calc-btn">.</button>
-                            <button @click="clearCalc()" class="calc-btn text-red-400">C</button>
-                            <button @click="appendCalc('+')" class="calc-btn calc-btn-op"><i class="fa-solid fa-plus"></i></button>
+                            <button @click="appendCalc('7')" class="calc-btn">7</button><button @click="appendCalc('8')" class="calc-btn">8</button><button @click="appendCalc('9')" class="calc-btn">9</button><button @click="appendCalc('/')" class="calc-btn calc-btn-op"><i class="fa-solid fa-divide"></i></button>
+                            <button @click="appendCalc('4')" class="calc-btn">4</button><button @click="appendCalc('5')" class="calc-btn">5</button><button @click="appendCalc('6')" class="calc-btn">6</button><button @click="appendCalc('*')" class="calc-btn calc-btn-op"><i class="fa-solid fa-xmark"></i></button>
+                            <button @click="appendCalc('1')" class="calc-btn">1</button><button @click="appendCalc('2')" class="calc-btn">2</button><button @click="appendCalc('3')" class="calc-btn">3</button><button @click="appendCalc('-')" class="calc-btn calc-btn-op"><i class="fa-solid fa-minus"></i></button>
+                            <button @click="appendCalc('0')" class="calc-btn">0</button><button @click="appendCalc('.')" class="calc-btn">.</button><button @click="clearCalc()" class="calc-btn text-red-400">C</button><button @click="appendCalc('+')" class="calc-btn calc-btn-op"><i class="fa-solid fa-plus"></i></button>
                         </div>
                         <button @click="calculateFinal()" class="w-full mt-2 h-12 rounded-lg bg-sakura-red text-white font-bold shadow-md active:bg-sakura-dark transition-colors text-lg">=</button>
                     </div>
 
                     <div class="bg-white rounded-2xl p-6 card-shadow">
-                        <h3 class="text-lg font-bold text-gray-700 mb-4 flex justify-between items-center">
-                            <span><i class="fa-solid fa-bed mr-2 text-purple-400"></i>住宿資訊</span>
-                        </h3>
-                        
-                        <div v-if="hotels.length === 0" class="text-center py-8 text-gray-400 text-sm">
-                            尚無住宿資料，請點擊 + 新增
-                        </div>
-
+                        <h3 class="text-lg font-bold text-gray-700 mb-4 flex justify-between items-center"><span><i class="fa-solid fa-bed mr-2 text-purple-400"></i>住宿資訊</span></h3>
+                        <div v-if="hotels.length === 0" class="text-center py-8 text-gray-400 text-sm">尚無住宿資料，請點擊 + 新增</div>
                         <div class="grid md:grid-cols-2 gap-4">
                             <div v-for="(hotel, index) in hotels" :key="hotel.id || index" class="p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors relative group">
                                 <button @click="deleteHotel(index)" class="absolute top-2 right-2 text-gray-200 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
-                                
-                                <div class="text-xs text-sakura-red mb-1 font-bold">{{ hotel.dates }}</div>
-                                <div class="font-bold text-gray-800 text-lg mb-2">{{ hotel.name }}</div>
-                                
-                                <div class="flex items-center text-xs text-gray-500 mb-3 space-x-3 bg-gray-50 p-2 rounded-lg">
-                                    <span v-if="hotel.checkIn"><i class="fa-solid fa-clock mr-1 text-green-400"></i>入住 {{ hotel.checkIn }}</span>
-                                    <span class="text-gray-300">|</span>
-                                    <span v-if="hotel.checkOut"><i class="fa-solid fa-person-walking-luggage mr-1 text-orange-400"></i>退房 {{ hotel.checkOut }}</span>
-                                </div>
-
-                                <div class="flex space-x-3">
-                                    <a :href="'https://www.google.com/maps/search/?api=1&query=' + hotel.name" target="_blank" class="flex-1 bg-white border border-gray-200 text-center py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors">
-                                        <i class="fa-solid fa-location-arrow mr-1"></i>導航
-                                    </a>
-                                </div>
+                                <div class="text-xs text-sakura-red mb-1 font-bold">{{ hotel.dates }}</div><div class="font-bold text-gray-800 text-lg mb-2">{{ hotel.name }}</div>
+                                <div class="flex items-center text-xs text-gray-500 mb-3 space-x-3 bg-gray-50 p-2 rounded-lg"><span v-if="hotel.checkIn"><i class="fa-solid fa-clock mr-1 text-green-400"></i>入住 {{ hotel.checkIn }}</span><span class="text-gray-300">|</span><span v-if="hotel.checkOut"><i class="fa-solid fa-person-walking-luggage mr-1 text-orange-400"></i>退房 {{ hotel.checkOut }}</span></div>
+                                <div class="flex space-x-3"><a :href="'https://www.google.com/maps/search/?api=1&query=' + hotel.name" target="_blank" class="flex-1 bg-white border border-gray-200 text-center py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"><i class="fa-solid fa-location-arrow mr-1"></i>導航</a></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div v-if="currentTab === 'shopping'" class="p-4 md:p-8">
-                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh]">
-                        <i class="fa-solid fa-basket-shopping text-6xl text-gray-200 mb-4"></i>
-                        <p>尚無購物清單</p>
-                        <p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p>
-                     </div>
+                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh]"><i class="fa-solid fa-basket-shopping text-6xl text-gray-200 mb-4"></i><p>尚無購物清單</p><p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p></div>
                      <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         <div v-for="(item, index) in shoppingList" :key="index" class="bg-white rounded-xl card-shadow overflow-hidden group">
-                            <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
-                                <img v-if="item.image" :src="item.image" class="w-full h-full object-cover">
-                                <i v-else class="fa-solid fa-camera text-gray-300 text-3xl"></i>
-                            </div>
-                            <div class="p-4">
-                                <h4 class="font-bold text-gray-700 truncate">{{ item.name }}</h4>
-                                <div class="flex justify-between mt-2">
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="checkbox" v-model="item.checked" class="w-5 h-5 accent-sakura-red">
-                                        <span class="text-xs ml-2 text-gray-400" v-if="item.checked">已購買</span>
-                                    </label>
-                                    <button @click="deleteShoppingItem(index)"><i class="fa-solid fa-trash-can text-gray-300 hover:text-red-400"></i></button>
-                                </div>
-                            </div>
+                            <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden"><img v-if="item.image" :src="item.image" class="w-full h-full object-cover"><i v-else class="fa-solid fa-camera text-gray-300 text-3xl"></i></div>
+                            <div class="p-4"><h4 class="font-bold text-gray-700 truncate">{{ item.name }}</h4><div class="flex justify-between mt-2"><label class="flex items-center cursor-pointer"><input type="checkbox" v-model="item.checked" class="w-5 h-5 accent-sakura-red"><span class="text-xs ml-2 text-gray-400" v-if="item.checked">已購買</span></label><button @click="deleteShoppingItem(index)"><i class="fa-solid fa-trash-can text-gray-300 hover:text-red-400"></i></button></div></div>
                         </div>
                      </div>
                 </div>
 
                 <div v-if="currentTab === 'expenses'" class="flex flex-col h-full p-4 md:p-8">
-                    <div class="bg-white p-6 rounded-2xl card-shadow text-center mb-6 max-w-2xl mx-auto w-full">
-                        <p class="text-sm text-gray-400">總支出 (JPY)</p><div class="text-5xl font-bold text-sakura-red mt-3">¥ {{ totalExpenses.toLocaleString() }}</div>
-                        <div class="mt-4 flex justify-center space-x-4 text-xs text-gray-500"><span>現金: {{ cashExpenses.toLocaleString() }}</span><span>信用卡: {{ cardExpenses.toLocaleString() }}</span></div>
-                    </div>
-                    
-                    <div v-if="!expenses || expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400">
-                        <i class="fa-solid fa-receipt text-6xl text-gray-200 mb-4"></i>
-                        <p>尚無記帳紀錄</p>
-                    </div>
-
+                    <div class="bg-white p-6 rounded-2xl card-shadow text-center mb-6 max-w-2xl mx-auto w-full"><p class="text-sm text-gray-400">總支出 (JPY)</p><div class="text-5xl font-bold text-sakura-red mt-3">¥ {{ totalExpenses.toLocaleString() }}</div><div class="mt-4 flex justify-center space-x-4 text-xs text-gray-500"><span>現金: {{ cashExpenses.toLocaleString() }}</span><span>信用卡: {{ cardExpenses.toLocaleString() }}</span></div></div>
+                    <div v-if="!expenses || expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400"><i class="fa-solid fa-receipt text-6xl text-gray-200 mb-4"></i><p>尚無記帳紀錄</p></div>
                     <div class="space-y-3 pb-20 max-w-4xl mx-auto w-full">
                         <div v-for="(exp, index) in expenses" :key="index" class="bg-white p-4 rounded-xl flex justify-between items-center card-shadow">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 mr-3">
-                                    <i :class="getExpenseIcon(exp.category)"></i>
-                                </div>
-                                <div><div class="font-bold text-gray-700">{{ exp.name }}</div><div class="text-xs text-gray-400">{{ exp.date }} · {{ exp.category }}</div></div>
-                            </div>
+                            <div class="flex items-center"><div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 mr-3"><i :class="getExpenseIcon(exp.category)"></i></div><div><div class="font-bold text-gray-700">{{ exp.name }}</div><div class="text-xs text-gray-400">{{ exp.date }} · {{ exp.category }}</div></div></div>
                             <div class="flex items-center"><div class="font-bold text-lg mr-4">¥ {{ exp.amount }}</div><button @click="deleteExpense(index)" class="text-gray-300 hover:text-red-400"><i class="fa-solid fa-trash"></i></button></div>
                         </div>
                     </div>
@@ -301,9 +235,7 @@
             
             </div> </main>
 
-        <button v-if="['itinerary','shopping','expenses','info'].includes(currentTab)" @click="handleFabClick" class="fixed bottom-24 right-6 w-16 h-16 bg-sakura-red text-white rounded-full shadow-xl flex items-center justify-center text-3xl btn-active z-40 hover:scale-110 transition-transform">
-            <i class="fa-solid fa-plus"></i>
-        </button>
+        <button v-if="['itinerary','shopping','expenses','info','food'].includes(currentTab)" @click="handleFabClick" class="fixed bottom-24 right-6 w-16 h-16 bg-sakura-red text-white rounded-full shadow-xl flex items-center justify-center text-3xl btn-active z-40 hover:scale-110 transition-transform"><i class="fa-solid fa-plus"></i></button>
 
         <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" @click.self="closeModal">
             <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 h-[90vh] sm:h-auto flex flex-col shadow-2xl slide-up-animation">
@@ -369,14 +301,34 @@
                <div class="space-y-4">
                    <div><label class="label-text">飯店名稱</label><input type="text" v-model="hotelForm.name" class="input-field" placeholder="例如：BRACKETS HOTEL"></div>
                    <div><label class="label-text">入住日期/天數</label><input type="text" v-model="hotelForm.dates" class="input-field" placeholder="例如：4/11 - 4/14"></div>
-                   <div class="grid grid-cols-2 gap-4">
-                       <div><label class="label-text">入住時間</label><input type="time" v-model="hotelForm.checkIn" class="input-field"></div>
-                       <div><label class="label-text">退房時間</label><input type="time" v-model="hotelForm.checkOut" class="input-field"></div>
-                   </div>
+                   <div class="grid grid-cols-2 gap-4"><div><label class="label-text">入住時間</label><input type="time" v-model="hotelForm.checkIn" class="input-field"></div><div><label class="label-text">退房時間</label><input type="time" v-model="hotelForm.checkOut" class="input-field"></div></div>
                </div>
                <button @click="saveHotel" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">儲存住宿</button>
             </div>
        </div>
+
+        <div v-if="showFoodModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showFoodModal = false">
+            <div class="bg-white w-full max-w-md rounded-2xl p-8 m-4 shadow-2xl slide-up-animation">
+                <h3 class="font-bold text-xl mb-6 text-center">新增美食</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="label-text">地區分類</label>
+                        <div class="flex space-x-3">
+                            <button @click="newFoodItem.category = 'osaka'" :class="['flex-1 py-3 rounded-xl border font-bold transition-all', newFoodItem.category === 'osaka' ? 'bg-blue-500 text-white border-blue-500 shadow-md' : 'bg-white border-gray-200 text-gray-500']"><i class="fa-solid fa-city mr-2"></i>大阪</button>
+                            <button @click="newFoodItem.category = 'kyoto'" :class="['flex-1 py-3 rounded-xl border font-bold transition-all', newFoodItem.category === 'kyoto' ? 'bg-red-500 text-white border-red-500 shadow-md' : 'bg-white border-gray-200 text-gray-500']"><i class="fa-solid fa-torii-gate mr-2"></i>京都</button>
+                        </div>
+                    </div>
+                    <div><label class="label-text">店名 / 餐廳名稱</label><input type="text" v-model="newFoodItem.name" class="input-field" placeholder="例如：敘敘苑燒肉"></div>
+                    <div><label class="label-text">備註 / 必吃餐點</label><textarea v-model="newFoodItem.note" class="input-field h-20" placeholder="例如：牛舌必點"></textarea></div>
+                    <label class="block w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-sakura-red bg-gray-50">
+                        <img v-if="newFoodItem.image" :src="newFoodItem.image" class="h-full object-contain">
+                        <div v-else class="text-center text-gray-400"><i class="fa-solid fa-camera text-2xl mb-2"></i><br>上傳圖片</div>
+                        <input type="file" @change="handleFoodImageUpload" class="hidden" accept="image/*">
+                    </label>
+                </div>
+                <button @click="saveFoodItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">加入清單</button>
+            </div>
+        </div>
 
     </div>
 
@@ -389,7 +341,7 @@
 
                 const currentTab = ref('itinerary');
                 const currentDayIndex = ref(0);
-                const showEditModal = ref(false), showShoppingModal = ref(false), showExpenseModal = ref(false), showHotelModal = ref(false);
+                const showEditModal = ref(false), showShoppingModal = ref(false), showExpenseModal = ref(false), showHotelModal = ref(false), showFoodModal = ref(false);
                 const isEditing = ref(false), editingIndex = ref(-1), isCompressing = ref(false), isLoadingData = ref(true);
 
                 const days = [
@@ -416,14 +368,15 @@
                 const shoppingList = ref([]);
                 const expenses = ref([]);
                 const hotels = ref([]); 
+                const foodList = ref([]); // 美食清單資料
                 const weather = reactive({ temp: '--', code: 0, desc: '載入中...', iconClass: 'fa-solid fa-cloud', loading: false });
 
                 const editForm = reactive({ id: null, category: 'spot', name: '', time: '', note: '', ticket: '', transportTime: 30, transportType: 'train', images: [], image: null });
                 const newShoppingItem = reactive({ name: '', image: null, checked: false });
                 const newExpense = reactive({ category: '飲食', name: '', amount: '', method: '現金', date: new Date().toISOString().split('T')[0] });
                 const hotelForm = reactive({ name: '', dates: '', checkIn: '15:00', checkOut: '11:00' });
+                const newFoodItem = reactive({ name: '', category: 'osaka', note: '', image: null }); // 美食表單
 
-                // 計算機狀態
                 const calcInput = ref('');
                 const calcFormula = ref('');
                 const calcResultTwd = computed(() => {
@@ -450,11 +403,10 @@
 
                 const getCategoryColor = (cat) => ({ spot: 'border-pink-400', food: 'border-orange-400', shopping: 'border-purple-400', flight: 'border-blue-400', hotel: 'border-indigo-400' }[cat] || 'border-gray-400');
                 const getCategoryBg = (cat) => ({ spot: 'bg-pink-400', food: 'bg-orange-400', shopping: 'bg-purple-400', flight: 'bg-blue-400', hotel: 'bg-indigo-400' }[cat] || 'bg-gray-400');
-                
                 const getCategoryIcon = (cat) => ({ spot: 'fa-solid fa-camera', food: 'fa-solid fa-utensils', shopping: 'fa-solid fa-bag-shopping', flight: 'fa-solid fa-plane', hotel: 'fa-solid fa-bed' }[cat] || 'fa-solid fa-star');
                 const getTransportIcon = (t) => t === 'walk' ? 'fa-solid fa-person-walking' : t === 'car' ? 'fa-solid fa-car' : 'fa-solid fa-train-subway';
                 const getExpenseIcon = (c) => ({ '飲食': 'fa-solid fa-utensils', '交通': 'fa-solid fa-train', '購物': 'fa-solid fa-bag-shopping', '門票': 'fa-solid fa-ticket' }[c] || 'fa-solid fa-receipt');
-                const getTabIcon = (t) => ({ 'itinerary': 'fa-solid fa-map-location-dot', 'info': 'fa-solid fa-circle-info', 'shopping': 'fa-solid fa-basket-shopping', 'expenses': 'fa-solid fa-coins' }[t]);
+                const getTabIcon = (t) => ({ 'itinerary': 'fa-solid fa-map-location-dot', 'info': 'fa-solid fa-circle-info', 'shopping': 'fa-solid fa-basket-shopping', 'expenses': 'fa-solid fa-coins', 'food': 'fa-solid fa-utensils' }[t]);
 
                 const getWeatherIconClass = (code) => {
                     if (code === 0) return 'fa-solid fa-sun text-yellow-400';
@@ -491,11 +443,8 @@
                     }
                 };
 
-                // 核心修復：當 Tab 切換回 itinerary 時，重新初始化 Sortable
                 watch(currentTab, (newVal) => {
-                    if (newVal === 'itinerary') {
-                        nextTick(() => initSortable());
-                    }
+                    if (newVal === 'itinerary') nextTick(() => initSortable());
                 });
 
                 watch(currentDayIndex, () => {
@@ -511,10 +460,12 @@
                         const dbShopping = await localforage.getItem('shoppingList');
                         const dbExpenses = await localforage.getItem('expenses');
                         const dbHotels = await localforage.getItem('hotels'); 
+                        const dbFood = await localforage.getItem('foodList'); // 載入美食
 
                         shoppingList.value = Array.isArray(dbShopping) ? dbShopping : [];
                         expenses.value = Array.isArray(dbExpenses) ? dbExpenses : [];
                         hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; 
+                        foodList.value = Array.isArray(dbFood) ? dbFood : []; // 初始化美食清單
                         
                         if (!dbItinerary) {
                              const oldIt = localStorage.getItem('itineraryData');
@@ -534,6 +485,7 @@
                         shoppingList.value = [];
                         expenses.value = [];
                         hotels.value = defaultHotels;
+                        foodList.value = [];
                     } finally {
                         isLoadingData.value = false;
                         nextTick(() => initSortable());
@@ -548,6 +500,7 @@
                         await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value)));
                         await localforage.setItem('expenses', JSON.parse(JSON.stringify(expenses.value)));
                         await localforage.setItem('hotels', JSON.parse(JSON.stringify(hotels.value))); 
+                        await localforage.setItem('foodList', JSON.parse(JSON.stringify(foodList.value))); // 儲存美食
                     } catch (e) {
                         alert("儲存失敗: " + e.message);
                     }
@@ -557,6 +510,10 @@
                 const totalExpenses = computed(() => (expenses.value || []).reduce((sum, item) => sum + Number(item.amount || 0), 0));
                 const cashExpenses = computed(() => (expenses.value || []).filter(i => i.method === '現金').reduce((sum, item) => sum + Number(item.amount || 0), 0));
                 const cardExpenses = computed(() => (expenses.value || []).filter(i => i.method === '信用卡').reduce((sum, item) => sum + Number(item.amount || 0), 0));
+                
+                // 美食清單分類
+                const osakaFoods = computed(() => foodList.value.filter(f => f.category === 'osaka'));
+                const kyotoFoods = computed(() => foodList.value.filter(f => f.category === 'kyoto'));
 
                 const compressImage = (file) => {
                     return new Promise((resolve) => {
@@ -601,6 +558,12 @@
                     }
                 };
 
+                const handleFoodImageUpload = async (e) => {
+                    if (e.target.files[0]) {
+                        newFoodItem.image = await compressImage(e.target.files[0]);
+                    }
+                };
+
                 const handleFabClick = () => {
                     if (currentTab.value === 'itinerary') openAddModal();
                     else if (currentTab.value === 'shopping') showShoppingModal.value = true;
@@ -608,6 +571,9 @@
                     else if (currentTab.value === 'info') { 
                         hotelForm.name = ''; hotelForm.dates = ''; hotelForm.checkIn = '15:00'; hotelForm.checkOut = '11:00';
                         showHotelModal.value = true;
+                    } else if (currentTab.value === 'food') { // 開啟美食 Modal
+                        newFoodItem.name = ''; newFoodItem.note = ''; newFoodItem.image = null; newFoodItem.category = 'osaka';
+                        showFoodModal.value = true;
                     }
                 };
 
@@ -647,12 +613,16 @@
                     }
                 };
 
-                const deleteHotel = async (idx) => {
-                    if(confirm('確定刪除此住宿？')) {
-                        hotels.value.splice(idx, 1);
+                const saveFoodItem = async () => {
+                    if (newFoodItem.name) {
+                        foodList.value.push({ ...newFoodItem, id: Date.now() });
                         await saveToDB();
+                        showFoodModal.value = false;
                     }
                 };
+
+                const deleteHotel = async (idx) => { if(confirm('確定刪除此住宿？')) { hotels.value.splice(idx, 1); await saveToDB(); } };
+                const deleteFoodItem = async (id) => { if(confirm('確定刪除此美食？')) { const idx = foodList.value.findIndex(f => f.id === id); if(idx !== -1) { foodList.value.splice(idx, 1); await saveToDB(); } } };
 
                 const confirmDelete = async () => { if(confirm('刪除?')) { itineraryData[currentDayIndex.value].splice(editingIndex.value, 1); await saveToDB(); showEditModal.value = false; } };
                 const removeImage = (idx) => editForm.images.splice(idx, 1);
@@ -667,35 +637,25 @@
                 const openImage = (u) => window.open(u, '_blank');
                 const closeModal = () => showEditModal.value = false;
 
-                // 初始化拖曳功能 (手機版修復核心)
                 const initSortable = () => {
                     const el = document.getElementById('itinerary-list');
                     if (el) {
                         if(el._sortable) el._sortable.destroy();
-
                         el._sortable = Sortable.create(el, {
                             handle: '.handle', 
                             animation: 250,
-                            
-                            // --- 關鍵設定：強制模擬拖曳 (解決手機問題) ---
                             forceFallback: true,      
                             fallbackClass: "sortable-fallback",
                             fallbackOnBody: true,     
-                            
-                            // --- 觸控手感優化 ---
                             delay: 150,               
                             delayOnTouchOnly: true,   
                             touchStartThreshold: 5,   
-                            
                             ghostClass: 'sortable-ghost',
-                            
                             onEnd: async (evt) => {
                                 if (evt.oldIndex === evt.newIndex) return;
-
                                 const list = itineraryData[currentDayIndex.value];
                                 const item = list.splice(evt.oldIndex, 1)[0];
                                 list.splice(evt.newIndex, 0, item);
-                                
                                 await saveToDB();
                             }
                         });
@@ -704,15 +664,16 @@
                 
                 return {
                     currentTab, currentDayIndex, days, hotels, currentDayItinerary, totalExpenses, cashExpenses, cardExpenses,
-                    showEditModal, showShoppingModal, showExpenseModal, showHotelModal, editForm, newShoppingItem, newExpense, hotelForm, isEditing, isCompressing, isLoadingData,
+                    showEditModal, showShoppingModal, showExpenseModal, showHotelModal, showFoodModal, 
+                    editForm, newShoppingItem, newExpense, hotelForm, newFoodItem,
+                    isEditing, isCompressing, isLoadingData,
                     getCategoryColor, getCategoryBg, getCategoryIcon, getTransportIcon, getExpenseIcon, getTabIcon,
                     handleFabClick, openAddModal, editItem, saveItinerary, confirmDelete, closeModal,
                     saveShoppingItem, deleteShoppingItem, handleShoppingImageUpload,
                     saveExpense, deleteExpense, saveHotel, deleteHotel,
+                    saveFoodItem, deleteFoodItem, handleFoodImageUpload, osakaFoods, kyotoFoods, foodList,
                     openMap, openImage, handleItineraryImageUpload, removeImage,
-                    weather,
-                    // 計算機相關
-                    calcInput, calcFormula, calcResultTwd, appendCalc, clearCalc, calculateFinal
+                    weather, calcInput, calcFormula, calcResultTwd, appendCalc, clearCalc, calculateFinal
                 };
             }
         }).mount('#app');
