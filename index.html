@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (計算機版)</title>
+    <title>關西之旅 2026 (可拖曳排序版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -38,10 +38,31 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         [v-cloak] { display: none; }
         .page-loading { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
+        
         /* 計算機按鈕樣式 */
         .calc-btn { @apply h-12 rounded-lg bg-gray-50 text-gray-600 font-bold active:bg-gray-200 transition-colors shadow-sm border border-gray-100; }
         .calc-btn-op { @apply bg-orange-50 text-orange-500 border-orange-100 active:bg-orange-100; }
         .calc-btn-eq { @apply bg-sakura-red text-white active:bg-sakura-dark shadow-md; }
+
+        /* 拖曳時的樣式 - 讓它看起來像浮起來 */
+        .sortable-ghost {
+            opacity: 0.4;
+            background-color: #fdf2f8; /* 淺粉色背景 */
+            border: 2px dashed #ffb7b2;
+        }
+        .sortable-chosen {
+            background-color: #fff;
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .sortable-drag {
+            opacity: 1;
+            background-color: white;
+        }
+        /* 拖曳把手樣式優化 */
+        .handle {
+            touch-action: none; /* 防止拖曳時觸發滾動 */
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
@@ -118,7 +139,11 @@
                                 </div>
 
                                 <div @click="openMap(item.name)" :class="['relative bg-white rounded-2xl p-6 card-shadow border-l-4 cursor-pointer active:scale-[0.99] transition-transform hover:shadow-lg', getCategoryColor(item.category)]">
-                                    <div class="absolute top-4 right-4 text-gray-200 handle cursor-move hover:text-gray-400 p-2"><i class="fa-solid fa-grip-lines text-lg"></i></div>
+                                    
+                                    <div class="absolute top-4 right-4 text-gray-300 handle cursor-move hover:text-gray-500 p-2 z-20">
+                                        <i class="fa-solid fa-grip-lines text-xl"></i>
+                                    </div>
+
                                     <div class="flex items-start">
                                         <div :class="['w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0 shadow-md text-lg', getCategoryBg(item.category)]"><i :class="item.icon"></i></div>
                                         <div class="ml-6 flex-1 overflow-hidden">
@@ -394,32 +419,17 @@
                 const calcInput = ref('');
                 const calcFormula = ref('');
                 const calcResultTwd = computed(() => {
-                    // 嘗試計算當前輸入的值
                     try {
-                        // 如果輸入空，顯示0
                         if (!calcInput.value) return 0;
-                        
-                        // 使用 Function 建構式安全執行數學運算 (替代 eval)
-                        // 注意：這裡只允許數字和運算符，避免安全風險
                         const safeExpr = calcInput.value.replace(/[^0-9+\-*/.]/g, '');
                         if(!safeExpr) return 0;
-                        
                         const jpyResult = new Function('return ' + safeExpr)();
                         return Math.round(jpyResult * 0.22).toLocaleString();
-                    } catch (e) {
-                        return '...';
-                    }
+                    } catch (e) { return '...'; }
                 });
 
-                const appendCalc = (val) => {
-                    calcInput.value += val;
-                };
-                
-                const clearCalc = () => {
-                    calcInput.value = '';
-                    calcFormula.value = '';
-                };
-
+                const appendCalc = (val) => { calcInput.value += val; };
+                const clearCalc = () => { calcInput.value = ''; calcFormula.value = ''; };
                 const calculateFinal = () => {
                     try {
                         const safeExpr = calcInput.value.replace(/[^0-9+\-*/.]/g, '');
@@ -427,9 +437,7 @@
                         const result = new Function('return ' + safeExpr)();
                         calcFormula.value = calcInput.value + ' =';
                         calcInput.value = String(result);
-                    } catch(e) {
-                        calcInput.value = 'Error';
-                    }
+                    } catch(e) { calcInput.value = 'Error'; }
                 };
 
                 const getCategoryColor = (cat) => ({ spot: 'border-pink-400', food: 'border-orange-400', shopping: 'border-purple-400', flight: 'border-blue-400', hotel: 'border-indigo-400' }[cat] || 'border-gray-400');
@@ -474,6 +482,13 @@
                         weather.loading = false;
                     }
                 };
+
+                // 核心修復：當 Tab 切換回 itinerary 時，重新初始化 Sortable
+                watch(currentTab, (newVal) => {
+                    if (newVal === 'itinerary') {
+                        nextTick(() => initSortable());
+                    }
+                });
 
                 watch(currentDayIndex, () => {
                     updateWeather();
@@ -644,14 +659,28 @@
                 const openImage = (u) => window.open(u, '_blank');
                 const closeModal = () => showEditModal.value = false;
 
+                // 初始化拖曳功能
                 const initSortable = () => {
                     const el = document.getElementById('itinerary-list');
-                    if (el) Sortable.create(el, { handle: '.handle', animation: 150, onEnd: async (evt) => {
-                        const list = itineraryData[currentDayIndex.value];
-                        const item = list.splice(evt.oldIndex, 1)[0];
-                        list.splice(evt.newIndex, 0, item);
-                        await saveToDB();
-                    }});
+                    if (el) {
+                        // 如果已經有 instance，先銷毀避免重複
+                        if(el._sortable) el._sortable.destroy();
+
+                        el._sortable = Sortable.create(el, {
+                            handle: '.handle', // 指定只能拉「把手」
+                            animation: 150,
+                            ghostClass: 'sortable-ghost',  // 拖曳時留下的影子樣式
+                            chosenClass: 'sortable-chosen', // 被選中的樣式
+                            dragClass: 'sortable-drag',    // 正在被拖著跑的樣式
+                            onEnd: async (evt) => {
+                                // 拖曳結束後更新資料數據
+                                const list = itineraryData[currentDayIndex.value];
+                                const item = list.splice(evt.oldIndex, 1)[0];
+                                list.splice(evt.newIndex, 0, item);
+                                await saveToDB();
+                            }
+                        });
+                    }
                 };
                 
                 return {
