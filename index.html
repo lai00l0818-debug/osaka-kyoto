@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (行前清單版)</title>
+    <title>關西之旅 2026 (風格清單版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -19,7 +19,14 @@
             theme: {
                 extend: {
                     colors: {
-                        sakura: { light: '#fff0f5', main: '#ffb7b2', dark: '#ff9e99', red: '#e94e59', text: '#4a4a4a' }
+                        sakura: { light: '#fff0f5', main: '#ffb7b2', dark: '#ff9e99', red: '#e94e59', text: '#4a4a4a' },
+                        // 自定義卡其色系
+                        khaki: {
+                            bg: '#fffbf0',      // 極淺卡其底
+                            light: '#e6dba8',   // 淺卡其 (Header)
+                            main: '#c2b280',    // 主卡其 (Border/Btn)
+                            dark: '#786c45'     // 深卡其 (Text)
+                        }
                     },
                     fontFamily: { sans: ['Noto Sans TC', 'sans-serif'] }
                 }
@@ -49,7 +56,7 @@
 
         /* 行前清單專用樣式 - 筆記本風格 */
         .paper-list {
-            background-image: linear-gradient(#f8f9fa .1em, transparent .1em);
+            background-image: linear-gradient(#f1f1f1 .1em, transparent .1em);
             background-size: 100% 3em;
         }
     </style>
@@ -134,46 +141,42 @@
                 </div>
 
                 <div v-if="currentTab === 'packing'" class="p-4 md:p-8 space-y-8">
-                    <div class="text-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center">
-                            <i class="fa-solid fa-suitcase-rolling text-sakura-red mr-3"></i>行前準備清單
-                        </h2>
-                    </div>
+                    <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center"><i class="fa-solid fa-suitcase-rolling text-sakura-red mr-3"></i>行前準備清單</h2></div>
 
-                    <div class="bg-white rounded-2xl shadow-lg border-2 border-dashed border-blue-200 overflow-hidden relative">
-                        <div class="bg-blue-50 p-4 border-b border-blue-100 flex justify-between items-center">
-                            <h3 class="font-bold text-blue-600 text-lg"><i class="fa-solid fa-user mr-2"></i>小澤的清單</h3>
-                            <div class="text-xs text-blue-400 bg-white px-2 py-1 rounded-full shadow-sm">{{ packingList.lai ? packingList.lai.filter(i=>i.checked).length : 0 }} / {{ packingList.lai ? packingList.lai.length : 0 }}</div>
+                    <div class="bg-white rounded-2xl shadow-lg border-2 border-dashed border-gray-300 overflow-hidden relative">
+                        <div class="bg-gray-100 p-4 border-b border-gray-200 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-800 text-lg"><i class="fa-solid fa-user mr-2"></i>小賴的清單</h3>
+                            <div class="text-xs text-gray-600 bg-white px-2 py-1 rounded-full shadow-sm border border-gray-200">{{ packingList.lai ? packingList.lai.filter(i=>i.checked).length : 0 }} / {{ packingList.lai ? packingList.lai.length : 0 }}</div>
                         </div>
                         <div class="p-4 space-y-3 paper-list">
                             <div v-for="(item, index) in packingList.lai" :key="index" class="flex items-center group">
-                                <input type="checkbox" v-model="item.checked" @change="savePacking" class="w-5 h-5 accent-blue-500 cursor-pointer rounded-full">
+                                <input type="checkbox" v-model="item.checked" @change="savePacking" class="w-5 h-5 accent-gray-800 cursor-pointer rounded-full">
                                 <span :class="['ml-3 flex-1 text-gray-700 transition-all text-lg', item.checked ? 'line-through text-gray-400 opacity-50' : '']">{{ item.text }}</span>
                                 <button @click="removePackingItem('lai', index)" class="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2"><i class="fa-solid fa-xmark"></i></button>
                             </div>
                             <div class="flex items-center mt-4 pt-2 border-t border-gray-100">
                                 <i class="fa-solid fa-plus text-gray-400 mr-3 ml-1"></i>
-                                <input type="text" v-model="packingInputs.lai" @keyup.enter="addPackingItem('lai')" placeholder="新增項目..." class="flex-1 bg-transparent outline-none text-gray-600 placeholder-gray-300">
-                                <button @click="addPackingItem('lai')" class="bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-blue-600 transition-colors"><i class="fa-solid fa-arrow-up text-xs"></i></button>
+                                <input type="text" v-model="packingInputs.lai" @keyup.enter="addPackingItem('lai')" placeholder="新增..." class="flex-1 bg-transparent outline-none text-gray-600 placeholder-gray-300">
+                                <button @click="addPackingItem('lai')" class="bg-gray-700 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-gray-900 transition-colors"><i class="fa-solid fa-arrow-up text-xs"></i></button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl shadow-lg border-2 border-dashed border-red-200 overflow-hidden relative">
-                        <div class="bg-red-50 p-4 border-b border-red-100 flex justify-between items-center">
-                            <h3 class="font-bold text-red-500 text-lg"><i class="fa-solid fa-user mr-2"></i>小賴的清單</h3>
-                            <div class="text-xs text-red-400 bg-white px-2 py-1 rounded-full shadow-sm">{{ packingList.ze ? packingList.ze.filter(i=>i.checked).length : 0 }} / {{ packingList.ze ? packingList.ze.length : 0 }}</div>
+                    <div class="bg-khaki-bg rounded-2xl shadow-lg border-2 border-dashed border-khaki-main overflow-hidden relative">
+                        <div class="bg-khaki-light p-4 border-b border-khaki-main flex justify-between items-center">
+                            <h3 class="font-bold text-khaki-dark text-lg"><i class="fa-solid fa-user mr-2"></i>小澤的清單</h3>
+                            <div class="text-xs text-khaki-dark bg-white px-2 py-1 rounded-full shadow-sm">{{ packingList.ze ? packingList.ze.filter(i=>i.checked).length : 0 }} / {{ packingList.ze ? packingList.ze.length : 0 }}</div>
                         </div>
                         <div class="p-4 space-y-3 paper-list">
                             <div v-for="(item, index) in packingList.ze" :key="index" class="flex items-center group">
-                                <input type="checkbox" v-model="item.checked" @change="savePacking" class="w-5 h-5 accent-red-500 cursor-pointer rounded-full">
+                                <input type="checkbox" v-model="item.checked" @change="savePacking" class="w-5 h-5 accent-khaki-main cursor-pointer rounded-full">
                                 <span :class="['ml-3 flex-1 text-gray-700 transition-all text-lg', item.checked ? 'line-through text-gray-400 opacity-50' : '']">{{ item.text }}</span>
-                                <button @click="removePackingItem('ze', index)" class="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2"><i class="fa-solid fa-xmark"></i></button>
+                                <button @click="removePackingItem('ze', index)" class="text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2"><i class="fa-solid fa-xmark"></i></button>
                             </div>
-                            <div class="flex items-center mt-4 pt-2 border-t border-gray-100">
-                                <i class="fa-solid fa-plus text-gray-400 mr-3 ml-1"></i>
-                                <input type="text" v-model="packingInputs.ze" @keyup.enter="addPackingItem('ze')" placeholder="新增項目..." class="flex-1 bg-transparent outline-none text-gray-600 placeholder-gray-300">
-                                <button @click="addPackingItem('ze')" class="bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"><i class="fa-solid fa-arrow-up text-xs"></i></button>
+                            <div class="flex items-center mt-4 pt-2 border-t border-khaki-main/20">
+                                <i class="fa-solid fa-plus text-khaki-main mr-3 ml-1"></i>
+                                <input type="text" v-model="packingInputs.ze" @keyup.enter="addPackingItem('ze')" placeholder="新增..." class="flex-1 bg-transparent outline-none text-gray-600 placeholder-gray-400">
+                                <button @click="addPackingItem('ze')" class="bg-khaki-main text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-khaki-dark transition-colors"><i class="fa-solid fa-arrow-up text-xs"></i></button>
                             </div>
                         </div>
                     </div>
@@ -495,13 +498,13 @@
                         const dbExpenses = await localforage.getItem('expenses');
                         const dbHotels = await localforage.getItem('hotels'); 
                         const dbFood = await localforage.getItem('foodList'); 
-                        const dbPacking = await localforage.getItem('packingList'); // 載入行前清單
+                        const dbPacking = await localforage.getItem('packingList'); 
 
                         shoppingList.value = Array.isArray(dbShopping) ? dbShopping : [];
                         expenses.value = Array.isArray(dbExpenses) ? dbExpenses : [];
                         hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; 
                         foodList.value = Array.isArray(dbFood) ? dbFood : [];
-                        packingList.value = dbPacking ? dbPacking : { lai: [], ze: [] }; // 初始化行前清單
+                        packingList.value = dbPacking ? dbPacking : { lai: [], ze: [] }; 
                         
                         if (!dbItinerary) {
                              const oldIt = localStorage.getItem('itineraryData');
@@ -538,7 +541,7 @@
                         await localforage.setItem('expenses', JSON.parse(JSON.stringify(expenses.value)));
                         await localforage.setItem('hotels', JSON.parse(JSON.stringify(hotels.value))); 
                         await localforage.setItem('foodList', JSON.parse(JSON.stringify(foodList.value))); 
-                        await localforage.setItem('packingList', JSON.parse(JSON.stringify(packingList.value))); // 儲存行前清單
+                        await localforage.setItem('packingList', JSON.parse(JSON.stringify(packingList.value))); 
                     } catch (e) {
                         alert("儲存失敗: " + e.message);
                     }
@@ -736,4 +739,3 @@
     <style>.label-text { @apply block text-xs font-bold text-gray-400 mb-1 ml-1; } .input-field { @apply w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-sakura-red focus:bg-white transition-colors; } .slide-up-animation { animation: slideUp 0.3s ease-out; } @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
 </body>
 </html>
-
