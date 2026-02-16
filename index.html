@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (美食清單版)</title>
+    <title>關西之旅 2026 (行前清單版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -46,6 +46,12 @@
         .sortable-ghost { opacity: 0.4; background-color: #fff0f5; border: 2px dashed #ffb7b2; }
         .sortable-fallback { opacity: 1 !important; background-color: white; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); transform: scale(1.02); border-radius: 1rem; cursor: grabbing; }
         .handle { touch-action: none; cursor: grab; } .handle:active { cursor: grabbing; }
+
+        /* 行前清單專用樣式 - 筆記本風格 */
+        .paper-list {
+            background-image: linear-gradient(#f8f9fa .1em, transparent .1em);
+            background-size: 100% 3em;
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
@@ -66,7 +72,7 @@
                 <p class="text-sm md:text-base font-medium opacity-90 mt-2 text-shadow"><i class="fa-regular fa-calendar mr-2"></i>2026.04.11 - 04.19</p>
             </div>
             <div class="absolute bottom-6 right-6 md:right-10 flex space-x-3 z-20 overflow-x-auto no-scrollbar max-w-[60vw] pr-2">
-                <button v-for="tab in ['itinerary', 'food', 'shopping', 'info', 'expenses']" :key="tab" @click="currentTab = tab" 
+                <button v-for="tab in ['itinerary', 'food', 'shopping', 'packing', 'info', 'expenses']" :key="tab" @click="currentTab = tab" 
                     :class="['w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm', currentTab === tab ? 'bg-sakura-red text-white scale-110' : 'bg-white/90 text-gray-500 hover:bg-white']">
                     <i :class="getTabIcon(tab)" class="text-base"></i>
                 </button>
@@ -127,6 +133,52 @@
                     </div>
                 </div>
 
+                <div v-if="currentTab === 'packing'" class="p-4 md:p-8 space-y-8">
+                    <div class="text-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center">
+                            <i class="fa-solid fa-suitcase-rolling text-sakura-red mr-3"></i>行前準備清單
+                        </h2>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-lg border-2 border-dashed border-blue-200 overflow-hidden relative">
+                        <div class="bg-blue-50 p-4 border-b border-blue-100 flex justify-between items-center">
+                            <h3 class="font-bold text-blue-600 text-lg"><i class="fa-solid fa-user mr-2"></i>小賴的清單</h3>
+                            <div class="text-xs text-blue-400 bg-white px-2 py-1 rounded-full shadow-sm">{{ packingList.lai ? packingList.lai.filter(i=>i.checked).length : 0 }} / {{ packingList.lai ? packingList.lai.length : 0 }}</div>
+                        </div>
+                        <div class="p-4 space-y-3 paper-list">
+                            <div v-for="(item, index) in packingList.lai" :key="index" class="flex items-center group">
+                                <input type="checkbox" v-model="item.checked" @change="savePacking" class="w-5 h-5 accent-blue-500 cursor-pointer rounded-full">
+                                <span :class="['ml-3 flex-1 text-gray-700 transition-all text-lg', item.checked ? 'line-through text-gray-400 opacity-50' : '']">{{ item.text }}</span>
+                                <button @click="removePackingItem('lai', index)" class="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="flex items-center mt-4 pt-2 border-t border-gray-100">
+                                <i class="fa-solid fa-plus text-gray-400 mr-3 ml-1"></i>
+                                <input type="text" v-model="packingInputs.lai" @keyup.enter="addPackingItem('lai')" placeholder="新增項目..." class="flex-1 bg-transparent outline-none text-gray-600 placeholder-gray-300">
+                                <button @click="addPackingItem('lai')" class="bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-blue-600 transition-colors"><i class="fa-solid fa-arrow-up text-xs"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-lg border-2 border-dashed border-red-200 overflow-hidden relative">
+                        <div class="bg-red-50 p-4 border-b border-red-100 flex justify-between items-center">
+                            <h3 class="font-bold text-red-500 text-lg"><i class="fa-solid fa-user mr-2"></i>小澤的清單</h3>
+                            <div class="text-xs text-red-400 bg-white px-2 py-1 rounded-full shadow-sm">{{ packingList.ze ? packingList.ze.filter(i=>i.checked).length : 0 }} / {{ packingList.ze ? packingList.ze.length : 0 }}</div>
+                        </div>
+                        <div class="p-4 space-y-3 paper-list">
+                            <div v-for="(item, index) in packingList.ze" :key="index" class="flex items-center group">
+                                <input type="checkbox" v-model="item.checked" @change="savePacking" class="w-5 h-5 accent-red-500 cursor-pointer rounded-full">
+                                <span :class="['ml-3 flex-1 text-gray-700 transition-all text-lg', item.checked ? 'line-through text-gray-400 opacity-50' : '']">{{ item.text }}</span>
+                                <button @click="removePackingItem('ze', index)" class="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="flex items-center mt-4 pt-2 border-t border-gray-100">
+                                <i class="fa-solid fa-plus text-gray-400 mr-3 ml-1"></i>
+                                <input type="text" v-model="packingInputs.ze" @keyup.enter="addPackingItem('ze')" placeholder="新增項目..." class="flex-1 bg-transparent outline-none text-gray-600 placeholder-gray-300">
+                                <button @click="addPackingItem('ze')" class="bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"><i class="fa-solid fa-arrow-up text-xs"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div v-if="currentTab === 'food'" class="p-4 md:p-8 pb-24">
                     <div v-if="foodList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[50vh]">
                         <i class="fa-solid fa-utensils text-6xl text-gray-200 mb-4"></i>
@@ -134,46 +186,29 @@
                         <p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p>
                     </div>
 
-                    <div v-else class="space-y-8">
+                    <div v-else class="space-y-6">
                         <div v-if="osakaFoods.length > 0">
-                            <h3 class="text-xl font-bold text-gray-700 mb-4 flex items-center border-l-4 border-blue-400 pl-3">
-                                <span class="mr-2">🏯</span>大阪美食
-                            </h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div v-for="food in osakaFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow">
-                                    <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden relative">
-                                        <img v-if="food.image" :src="food.image" class="w-full h-full object-cover">
-                                        <div v-else class="text-gray-300 flex flex-col items-center"><i class="fa-solid fa-burger text-3xl mb-1"></i><span class="text-xs">無圖片</span></div>
-                                        <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                                    </div>
-                                    <div class="p-4">
-                                        <div class="flex justify-between items-start">
-                                            <h4 class="font-bold text-gray-800 text-lg truncate flex-1">{{ food.name }}</h4>
-                                            <i class="fa-solid fa-location-arrow text-gray-300 text-sm ml-2"></i>
-                                        </div>
-                                        <p v-if="food.note" class="text-sm text-gray-500 mt-2 bg-gray-50 p-2 rounded">{{ food.note }}</p>
+                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-blue-400 pl-3"><span class="mr-2">🏯</span>大阪美食</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div v-for="food in osakaFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow p-4 relative cursor-pointer hover:shadow-lg transition-transform active:scale-95 border border-gray-50">
+                                    <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-2 z-10"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                                    <div class="pr-6">
+                                        <h4 class="font-bold text-gray-800 text-base truncate mb-1">{{ food.name }}</h4>
+                                        <div class="text-xs text-sakura-red mb-2 flex items-center font-medium"><i class="fa-solid fa-location-arrow mr-1"></i>導航</div>
+                                        <p v-if="food.note" class="text-xs text-gray-500 bg-gray-50 p-2 rounded break-words line-clamp-3">{{ food.note }}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                         <div v-if="kyotoFoods.length > 0">
-                            <h3 class="text-xl font-bold text-gray-700 mb-4 flex items-center border-l-4 border-red-400 pl-3">
-                                <span class="mr-2">⛩️</span>京都美食
-                            </h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div v-for="food in kyotoFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow">
-                                    <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden relative">
-                                        <img v-if="food.image" :src="food.image" class="w-full h-full object-cover">
-                                        <div v-else class="text-gray-300 flex flex-col items-center"><i class="fa-solid fa-bowl-food text-3xl mb-1"></i><span class="text-xs">無圖片</span></div>
-                                        <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                                    </div>
-                                    <div class="p-4">
-                                        <div class="flex justify-between items-start">
-                                            <h4 class="font-bold text-gray-800 text-lg truncate flex-1">{{ food.name }}</h4>
-                                            <i class="fa-solid fa-location-arrow text-gray-300 text-sm ml-2"></i>
-                                        </div>
-                                        <p v-if="food.note" class="text-sm text-gray-500 mt-2 bg-gray-50 p-2 rounded">{{ food.note }}</p>
+                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-red-400 pl-3"><span class="mr-2">⛩️</span>京都美食</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div v-for="food in kyotoFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow p-4 relative cursor-pointer hover:shadow-lg transition-transform active:scale-95 border border-gray-50">
+                                    <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-2 z-10"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                                    <div class="pr-6">
+                                        <h4 class="font-bold text-gray-800 text-base truncate mb-1">{{ food.name }}</h4>
+                                        <div class="text-xs text-sakura-red mb-2 flex items-center font-medium"><i class="fa-solid fa-location-arrow mr-1"></i>導航</div>
+                                        <p v-if="food.note" class="text-xs text-gray-500 bg-gray-50 p-2 rounded break-words line-clamp-3">{{ food.note }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -320,11 +355,6 @@
                     </div>
                     <div><label class="label-text">店名 / 餐廳名稱</label><input type="text" v-model="newFoodItem.name" class="input-field" placeholder="例如：敘敘苑燒肉"></div>
                     <div><label class="label-text">備註 / 必吃餐點</label><textarea v-model="newFoodItem.note" class="input-field h-20" placeholder="例如：牛舌必點"></textarea></div>
-                    <label class="block w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-sakura-red bg-gray-50">
-                        <img v-if="newFoodItem.image" :src="newFoodItem.image" class="h-full object-contain">
-                        <div v-else class="text-center text-gray-400"><i class="fa-solid fa-camera text-2xl mb-2"></i><br>上傳圖片</div>
-                        <input type="file" @change="handleFoodImageUpload" class="hidden" accept="image/*">
-                    </label>
                 </div>
                 <button @click="saveFoodItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">加入清單</button>
             </div>
@@ -368,14 +398,18 @@
                 const shoppingList = ref([]);
                 const expenses = ref([]);
                 const hotels = ref([]); 
-                const foodList = ref([]); // 美食清單資料
+                const foodList = ref([]); 
+                // 行前清單資料結構
+                const packingList = ref({ lai: [], ze: [] }); 
+                const packingInputs = reactive({ lai: '', ze: '' });
+
                 const weather = reactive({ temp: '--', code: 0, desc: '載入中...', iconClass: 'fa-solid fa-cloud', loading: false });
 
                 const editForm = reactive({ id: null, category: 'spot', name: '', time: '', note: '', ticket: '', transportTime: 30, transportType: 'train', images: [], image: null });
                 const newShoppingItem = reactive({ name: '', image: null, checked: false });
                 const newExpense = reactive({ category: '飲食', name: '', amount: '', method: '現金', date: new Date().toISOString().split('T')[0] });
                 const hotelForm = reactive({ name: '', dates: '', checkIn: '15:00', checkOut: '11:00' });
-                const newFoodItem = reactive({ name: '', category: 'osaka', note: '', image: null }); // 美食表單
+                const newFoodItem = reactive({ name: '', category: 'osaka', note: '', image: null });
 
                 const calcInput = ref('');
                 const calcFormula = ref('');
@@ -406,7 +440,7 @@
                 const getCategoryIcon = (cat) => ({ spot: 'fa-solid fa-camera', food: 'fa-solid fa-utensils', shopping: 'fa-solid fa-bag-shopping', flight: 'fa-solid fa-plane', hotel: 'fa-solid fa-bed' }[cat] || 'fa-solid fa-star');
                 const getTransportIcon = (t) => t === 'walk' ? 'fa-solid fa-person-walking' : t === 'car' ? 'fa-solid fa-car' : 'fa-solid fa-train-subway';
                 const getExpenseIcon = (c) => ({ '飲食': 'fa-solid fa-utensils', '交通': 'fa-solid fa-train', '購物': 'fa-solid fa-bag-shopping', '門票': 'fa-solid fa-ticket' }[c] || 'fa-solid fa-receipt');
-                const getTabIcon = (t) => ({ 'itinerary': 'fa-solid fa-map-location-dot', 'info': 'fa-solid fa-circle-info', 'shopping': 'fa-solid fa-basket-shopping', 'expenses': 'fa-solid fa-coins', 'food': 'fa-solid fa-utensils' }[t]);
+                const getTabIcon = (t) => ({ 'itinerary': 'fa-solid fa-map-location-dot', 'info': 'fa-solid fa-circle-info', 'shopping': 'fa-solid fa-basket-shopping', 'expenses': 'fa-solid fa-coins', 'food': 'fa-solid fa-utensils', 'packing': 'fa-solid fa-suitcase' }[t]);
 
                 const getWeatherIconClass = (code) => {
                     if (code === 0) return 'fa-solid fa-sun text-yellow-400';
@@ -460,12 +494,14 @@
                         const dbShopping = await localforage.getItem('shoppingList');
                         const dbExpenses = await localforage.getItem('expenses');
                         const dbHotels = await localforage.getItem('hotels'); 
-                        const dbFood = await localforage.getItem('foodList'); // 載入美食
+                        const dbFood = await localforage.getItem('foodList'); 
+                        const dbPacking = await localforage.getItem('packingList'); // 載入行前清單
 
                         shoppingList.value = Array.isArray(dbShopping) ? dbShopping : [];
                         expenses.value = Array.isArray(dbExpenses) ? dbExpenses : [];
                         hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; 
-                        foodList.value = Array.isArray(dbFood) ? dbFood : []; // 初始化美食清單
+                        foodList.value = Array.isArray(dbFood) ? dbFood : [];
+                        packingList.value = dbPacking ? dbPacking : { lai: [], ze: [] }; // 初始化行前清單
                         
                         if (!dbItinerary) {
                              const oldIt = localStorage.getItem('itineraryData');
@@ -486,6 +522,7 @@
                         expenses.value = [];
                         hotels.value = defaultHotels;
                         foodList.value = [];
+                        packingList.value = { lai: [], ze: [] };
                     } finally {
                         isLoadingData.value = false;
                         nextTick(() => initSortable());
@@ -500,7 +537,8 @@
                         await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value)));
                         await localforage.setItem('expenses', JSON.parse(JSON.stringify(expenses.value)));
                         await localforage.setItem('hotels', JSON.parse(JSON.stringify(hotels.value))); 
-                        await localforage.setItem('foodList', JSON.parse(JSON.stringify(foodList.value))); // 儲存美食
+                        await localforage.setItem('foodList', JSON.parse(JSON.stringify(foodList.value))); 
+                        await localforage.setItem('packingList', JSON.parse(JSON.stringify(packingList.value))); // 儲存行前清單
                     } catch (e) {
                         alert("儲存失敗: " + e.message);
                     }
@@ -511,7 +549,6 @@
                 const cashExpenses = computed(() => (expenses.value || []).filter(i => i.method === '現金').reduce((sum, item) => sum + Number(item.amount || 0), 0));
                 const cardExpenses = computed(() => (expenses.value || []).filter(i => i.method === '信用卡').reduce((sum, item) => sum + Number(item.amount || 0), 0));
                 
-                // 美食清單分類
                 const osakaFoods = computed(() => foodList.value.filter(f => f.category === 'osaka'));
                 const kyotoFoods = computed(() => foodList.value.filter(f => f.category === 'kyoto'));
 
@@ -571,7 +608,7 @@
                     else if (currentTab.value === 'info') { 
                         hotelForm.name = ''; hotelForm.dates = ''; hotelForm.checkIn = '15:00'; hotelForm.checkOut = '11:00';
                         showHotelModal.value = true;
-                    } else if (currentTab.value === 'food') { // 開啟美食 Modal
+                    } else if (currentTab.value === 'food') { 
                         newFoodItem.name = ''; newFoodItem.note = ''; newFoodItem.image = null; newFoodItem.category = 'osaka';
                         showFoodModal.value = true;
                     }
@@ -620,6 +657,22 @@
                         showFoodModal.value = false;
                     }
                 };
+
+                // 行前清單功能
+                const addPackingItem = async (type) => {
+                    const text = packingInputs[type].trim();
+                    if(text) {
+                        if(!packingList.value[type]) packingList.value[type] = [];
+                        packingList.value[type].push({ text, checked: false });
+                        packingInputs[type] = '';
+                        await saveToDB();
+                    }
+                };
+                const removePackingItem = async (type, index) => {
+                    packingList.value[type].splice(index, 1);
+                    await saveToDB();
+                };
+                const savePacking = async () => { await saveToDB(); };
 
                 const deleteHotel = async (idx) => { if(confirm('確定刪除此住宿？')) { hotels.value.splice(idx, 1); await saveToDB(); } };
                 const deleteFoodItem = async (id) => { if(confirm('確定刪除此美食？')) { const idx = foodList.value.findIndex(f => f.id === id); if(idx !== -1) { foodList.value.splice(idx, 1); await saveToDB(); } } };
@@ -672,6 +725,8 @@
                     saveShoppingItem, deleteShoppingItem, handleShoppingImageUpload,
                     saveExpense, deleteExpense, saveHotel, deleteHotel,
                     saveFoodItem, deleteFoodItem, handleFoodImageUpload, osakaFoods, kyotoFoods, foodList,
+                    // 行前清單
+                    packingList, packingInputs, addPackingItem, removePackingItem, savePacking,
                     openMap, openImage, handleItineraryImageUpload, removeImage,
                     weather, calcInput, calcFormula, calcResultTwd, appendCalc, clearCalc, calculateFinal
                 };
