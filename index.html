@@ -59,11 +59,19 @@
             background-image: linear-gradient(#f1f1f1 .1em, transparent .1em);
             background-size: 100% 3em;
         }
+
+        /* --- 新增背景樣式 --- */
+        .bg-custom-pattern {
+            background-image: url('./background.png'); /* 請確保圖片名稱為 background.png */
+            background-size: cover;      /* 讓圖片填滿整個容器 */
+            background-position: center; /* 圖片置中 */
+            background-repeat: no-repeat;
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
 
-    <div id="app" v-cloak class="h-full w-full bg-white shadow-2xl flex flex-col relative">
+    <div id="app" v-cloak class="h-full w-full bg-custom-pattern shadow-2xl flex flex-col relative">
         
         <div v-if="isLoadingData" class="page-loading">
             <div class="loader w-10 h-10 border-4 mb-4 text-sakura-red"></div>
@@ -79,14 +87,14 @@
                 <p class="text-sm md:text-base font-medium opacity-90 mt-2 text-shadow"><i class="fa-regular fa-calendar mr-2"></i>2026.04.11 - 04.19</p>
             </div>
             <div class="absolute bottom-6 right-6 md:right-10 flex space-x-3 z-20 overflow-x-auto no-scrollbar max-w-[60vw] pr-2">
-                <button v-for="tab in ['itinerary', 'food', 'shopping', 'packing', 'info', 'expenses']" :key="tab" @click="currentTab = tab" 
+                <button v-for="tab in ['packing', 'itinerary', 'info', 'food', 'shopping', 'expenses']" :key="tab" @click="currentTab = tab" 
                     :class="['w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm', currentTab === tab ? 'bg-sakura-red text-white scale-110' : 'bg-white/90 text-gray-500 hover:bg-white']">
                     <i :class="getTabIcon(tab)" class="text-base"></i>
                 </button>
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto no-scrollbar relative bg-gray-50 pb-20">
+        <main class="flex-1 overflow-y-auto no-scrollbar relative pb-20">
             <div class="w-full h-full max-w-7xl mx-auto"> 
                 
                 <div v-if="currentTab === 'itinerary'" class="h-full flex flex-col">
@@ -115,10 +123,9 @@
                         <div class="md:col-span-9 lg:col-span-9 space-y-0" id="itinerary-list">
                             <div v-for="(item, index) in currentDayItinerary" :key="item.id" class="relative group itinerary-item">
                                 <div v-if="index > 0" class="flex items-center justify-center py-2 relative">
-                                    <div class="h-8 w-0.5 bg-gray-200 absolute top-0 bottom-0 z-0"></div>
-                                    <div class="bg-white border border-gray-200 text-gray-400 text-xs px-3 py-1 rounded-full z-10 flex items-center space-x-1 shadow-sm"><i :class="getTransportIcon(item.transportType)"></i><span>{{ item.transportTime }} min</span></div>
+                                    <div class="h-8 w-0.5 bg-gray-200/50 absolute top-0 bottom-0 z-0"></div> <div class="bg-white border border-gray-200 text-gray-400 text-xs px-3 py-1 rounded-full z-10 flex items-center space-x-1 shadow-sm"><i :class="getTransportIcon(item.transportType)"></i><span>{{ item.transportTime }} min</span></div>
                                 </div>
-                                <div v-else-if="index === 0 && !item.isFlight" class="flex items-center justify-center py-2 pb-4"><div class="text-xs text-gray-400 bg-gray-200 px-3 py-1 rounded-full"><i class="fa-solid fa-hotel mr-1"></i> 從飯店出發約 {{ item.transportTime }} min</div></div>
+                                <div v-else-if="index === 0 && !item.isFlight" class="flex items-center justify-center py-2 pb-4"><div class="text-xs text-gray-500 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm"><i class="fa-solid fa-hotel mr-1"></i> 從飯店出發約 {{ item.transportTime }} min</div></div>
 
                                 <div @click="openMap(item.name)" :class="['relative bg-white rounded-2xl p-6 card-shadow border-l-4 cursor-pointer active:scale-[0.99] transition-transform hover:shadow-lg', getCategoryColor(item.category)]">
                                     <div class="absolute top-4 right-4 text-gray-300 handle cursor-move hover:text-gray-500 p-2 z-20 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full shadow-sm"><i class="fa-solid fa-grip-lines text-xl"></i></div>
@@ -141,7 +148,7 @@
                 </div>
 
                 <div v-if="currentTab === 'packing'" class="p-4 md:p-8 space-y-8">
-                    <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center"><i class="fa-solid fa-suitcase-rolling text-sakura-red mr-3"></i>行前準備清單</h2></div>
+                    <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center bg-white/60 backdrop-blur-sm inline-block px-4 py-2 rounded-full mx-auto shadow-sm"><i class="fa-solid fa-suitcase-rolling text-sakura-red mr-3"></i>行前準備清單</h2></div>
 
                     <div class="bg-white rounded-2xl shadow-lg border-2 border-dashed border-gray-300 overflow-hidden relative">
                         <div class="bg-gray-100 p-4 border-b border-gray-200 flex justify-between items-center">
@@ -183,15 +190,17 @@
                 </div>
 
                 <div v-if="currentTab === 'food'" class="p-4 md:p-8 pb-24">
-                    <div v-if="foodList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[50vh]">
-                        <i class="fa-solid fa-utensils text-6xl text-gray-200 mb-4"></i>
-                        <p>尚無美食清單</p>
-                        <p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p>
+                    <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center bg-white/60 backdrop-blur-sm inline-block px-4 py-2 rounded-full mx-auto shadow-sm"><i class="fa-solid fa-utensils text-sakura-red mr-3"></i>美食清單 阿姆阿姆</h2></div>
+
+                    <div v-if="foodList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[50vh] bg-white/50 backdrop-blur-sm rounded-3xl mx-4">
+                        <i class="fa-solid fa-utensils text-6xl text-gray-300 mb-4"></i>
+                        <p class="font-bold text-gray-500">尚無美食清單</p>
+                        <p class="text-xs mt-2 text-gray-400">點擊右下角按鈕新增</p>
                     </div>
 
                     <div v-else class="space-y-6">
                         <div v-if="osakaFoods.length > 0">
-                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-blue-400 pl-3"><span class="mr-2">🏯</span>大阪美食</h3>
+                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-blue-400 pl-3 bg-white/80 backdrop-blur-sm py-2 rounded-r-lg inline-block pr-4 shadow-sm"><span class="mr-2">🏯</span>大阪美食</h3>
                             <div class="grid grid-cols-2 gap-3">
                                 <div v-for="food in osakaFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow p-4 relative cursor-pointer hover:shadow-lg transition-transform active:scale-95 border border-gray-50">
                                     <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-2 z-10"><i class="fa-solid fa-trash-can text-sm"></i></button>
@@ -204,7 +213,7 @@
                             </div>
                         </div>
                         <div v-if="kyotoFoods.length > 0">
-                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-red-400 pl-3"><span class="mr-2">⛩️</span>京都美食</h3>
+                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-red-400 pl-3 bg-white/80 backdrop-blur-sm py-2 rounded-r-lg inline-block pr-4 shadow-sm"><span class="mr-2">⛩️</span>京都美食</h3>
                             <div class="grid grid-cols-2 gap-3">
                                 <div v-for="food in kyotoFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow p-4 relative cursor-pointer hover:shadow-lg transition-transform active:scale-95 border border-gray-50">
                                     <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-2 z-10"><i class="fa-solid fa-trash-can text-sm"></i></button>
@@ -251,7 +260,7 @@
                 </div>
 
                 <div v-if="currentTab === 'shopping'" class="p-4 md:p-8">
-                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh]"><i class="fa-solid fa-basket-shopping text-6xl text-gray-200 mb-4"></i><p>尚無購物清單</p><p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p></div>
+                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh] bg-white/50 backdrop-blur-sm rounded-3xl mx-4"><i class="fa-solid fa-basket-shopping text-6xl text-gray-300 mb-4"></i><p class="font-bold text-gray-500">尚無購物清單</p><p class="text-xs mt-2 text-gray-400">點擊右下角按鈕新增</p></div>
                      <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         <div v-for="(item, index) in shoppingList" :key="index" class="bg-white rounded-xl card-shadow overflow-hidden group">
                             <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden"><img v-if="item.image" :src="item.image" class="w-full h-full object-cover"><i v-else class="fa-solid fa-camera text-gray-300 text-3xl"></i></div>
@@ -262,7 +271,7 @@
 
                 <div v-if="currentTab === 'expenses'" class="flex flex-col h-full p-4 md:p-8">
                     <div class="bg-white p-6 rounded-2xl card-shadow text-center mb-6 max-w-2xl mx-auto w-full"><p class="text-sm text-gray-400">總支出 (JPY)</p><div class="text-5xl font-bold text-sakura-red mt-3">¥ {{ totalExpenses.toLocaleString() }}</div><div class="mt-4 flex justify-center space-x-4 text-xs text-gray-500"><span>現金: {{ cashExpenses.toLocaleString() }}</span><span>信用卡: {{ cardExpenses.toLocaleString() }}</span></div></div>
-                    <div v-if="!expenses || expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400"><i class="fa-solid fa-receipt text-6xl text-gray-200 mb-4"></i><p>尚無記帳紀錄</p></div>
+                    <div v-if="!expenses || expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400 bg-white/50 backdrop-blur-sm rounded-3xl mx-4"><i class="fa-solid fa-receipt text-6xl text-gray-300 mb-4"></i><p class="font-bold text-gray-500">尚無記帳紀錄</p></div>
                     <div class="space-y-3 pb-20 max-w-4xl mx-auto w-full">
                         <div v-for="(exp, index) in expenses" :key="index" class="bg-white p-4 rounded-xl flex justify-between items-center card-shadow">
                             <div class="flex items-center"><div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 mr-3"><i :class="getExpenseIcon(exp.category)"></i></div><div><div class="font-bold text-gray-700">{{ exp.name }}</div><div class="text-xs text-gray-400">{{ exp.date }} · {{ exp.category }}</div></div></div>
@@ -372,6 +381,7 @@
             setup() {
                 localforage.config({ name: 'TripApp', storeName: 'trip_data' });
 
+                // 預設頁面設定為 'itinerary' (行程)，這在新的順序中是第二個，符合要求
                 const currentTab = ref('itinerary');
                 const currentDayIndex = ref(0);
                 const showEditModal = ref(false), showShoppingModal = ref(false), showExpenseModal = ref(false), showHotelModal = ref(false), showFoodModal = ref(false);
@@ -738,4 +748,4 @@
     </script>
     <style>.label-text { @apply block text-xs font-bold text-gray-400 mb-1 ml-1; } .input-field { @apply w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-sakura-red focus:bg-white transition-colors; } .slide-up-animation { animation: slideUp 0.3s ease-out; } @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
 </body>
-</html>
+</html>6
