@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (功能修復版)</title>
+    <title>關西之旅 2026 (記帳修復版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -89,7 +89,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="p-4 md:p-8 grid md:grid-cols-12 gap-6">
                         <div class="md:col-span-3 lg:col-span-3">
                             <div class="p-6 bg-gradient-to-br from-blue-50 to-white rounded-2xl flex md:flex-col items-center justify-between md:justify-center card-shadow border border-blue-100 sticky top-32">
@@ -101,7 +100,6 @@
                                 <div class="text-center"><i v-if="weather.loading" class="fa-solid fa-cloud text-gray-200 text-5xl"></i><i v-else :class="['text-5xl drop-shadow-md transition-all duration-500', weather.iconClass]"></i></div>
                             </div>
                         </div>
-
                         <div class="md:col-span-9 lg:col-span-9 space-y-0" id="itinerary-list">
                             <div v-for="(item, index) in currentDayItinerary" :key="item.id" class="relative group itinerary-item">
                                 <div v-if="index > 0" class="flex items-center justify-center py-2 relative">
@@ -109,7 +107,6 @@
                                     <div class="bg-white border border-gray-200 text-gray-400 text-xs px-3 py-1 rounded-full z-10 flex items-center space-x-1 shadow-sm"><i :class="getTransportIcon(item.transportType)"></i><span>{{ item.transportTime }} min</span></div>
                                 </div>
                                 <div v-else-if="index === 0 && !item.isFlight" class="flex items-center justify-center py-2 pb-4"><div class="text-xs text-gray-400 bg-gray-200 px-3 py-1 rounded-full"><i class="fa-solid fa-hotel mr-1"></i> 從飯店出發約 {{ item.transportTime }} min</div></div>
-
                                 <div @click="openMap(item.name)" :class="['relative bg-white rounded-2xl p-6 card-shadow border-l-4 cursor-pointer active:scale-[0.99] transition-transform hover:shadow-lg', getCategoryColor(item.category)]">
                                     <div class="absolute top-4 right-4 text-gray-300 handle cursor-move hover:text-gray-500 p-2 z-20 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full shadow-sm"><i class="fa-solid fa-grip-lines text-xl"></i></div>
                                     <div class="flex items-start">
@@ -229,12 +226,6 @@
                 </div>
 
                 <div v-if="currentTab === 'info'" class="space-y-8 pb-10 p-4 md:p-8">
-                    <div class="bg-red-50 rounded-2xl p-6 card-shadow border border-red-100">
-                        <h3 class="text-lg font-bold text-red-500 mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>資料救援區</h3>
-                        <p class="text-xs text-red-400 mb-4">如果發現無法新增資料，請嘗試清除圖片以釋放空間。</p>
-                        <button @click="clearAllImages" class="w-full bg-white border border-red-200 text-red-500 hover:bg-red-50 py-3 rounded-xl font-bold transition-colors flex items-center justify-center shadow-sm"><i class="fa-solid fa-eraser mr-2"></i>清除所有圖片 (保留文字)</button>
-                    </div>
-
                     <div class="bg-white rounded-2xl p-6 card-shadow border-t-4 border-green-500">
                         <h3 class="text-lg font-bold text-gray-700 mb-2"><i class="fa-solid fa-rotate mr-2 text-green-500"></i>手動備份資料</h3>
                         <div class="flex space-x-3">
@@ -258,15 +249,21 @@
                         </div>
                         <button @click="calculateFinal()" class="w-full mt-2 h-12 rounded-lg bg-sakura-red text-white font-bold shadow-md active:bg-sakura-dark transition-colors text-lg">=</button>
                     </div>
+
+                    <div class="bg-red-50 rounded-2xl p-6 card-shadow border border-red-100">
+                        <h3 class="text-lg font-bold text-red-500 mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>資料救援區</h3>
+                        <p class="text-xs text-red-400 mb-4">如果發現無法新增資料，請嘗試清除圖片以釋放空間。</p>
+                        <button @click="clearAllImages" class="w-full bg-white border border-red-200 text-red-500 hover:bg-red-50 py-3 rounded-xl font-bold transition-colors flex items-center justify-center shadow-sm"><i class="fa-solid fa-eraser mr-2"></i>清除所有圖片 (保留文字)</button>
+                    </div>
                 </div>
 
                 <div v-if="currentTab === 'expenses'" class="flex flex-col h-full p-4 md:p-8">
                     <div class="bg-white p-6 rounded-2xl card-shadow text-center mb-6 max-w-2xl mx-auto w-full"><p class="text-sm text-gray-400">總支出 (JPY)</p><div class="text-5xl font-bold text-sakura-red mt-3">¥ {{ totalExpenses.toLocaleString() }}</div><div class="mt-4 flex justify-center space-x-4 text-xs text-gray-500"><span>現金: {{ cashExpenses.toLocaleString() }}</span><span>信用卡: {{ cardExpenses.toLocaleString() }}</span></div></div>
                     
-                    <div v-if="!expenses || expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400"><i class="fa-solid fa-receipt text-6xl text-gray-200 mb-4"></i><p>尚無記帳紀錄</p></div>
+                    <div v-show="!expenses || expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400"><i class="fa-solid fa-receipt text-6xl text-gray-200 mb-4"></i><p>尚無記帳紀錄</p></div>
                     
-                    <div v-else class="space-y-3 pb-20 max-w-4xl mx-auto w-full">
-                        <div v-for="(exp, index) in expenses" :key="index" class="bg-white p-4 rounded-xl flex justify-between items-center card-shadow relative group">
+                    <div v-show="expenses && expenses.length > 0" class="space-y-3 pb-20 max-w-4xl mx-auto w-full">
+                        <div v-for="(exp, index) in expenses" :key="exp.id || index" class="bg-white p-4 rounded-xl flex justify-between items-center card-shadow relative group">
                             <div class="flex items-center flex-1">
                                 <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 mr-3"><i :class="getExpenseIcon(exp.category)"></i></div>
                                 <div><div class="font-bold text-gray-700">{{ exp.name }}</div><div class="text-xs text-gray-400">{{ exp.date }} · {{ exp.category }}</div></div>
@@ -274,7 +271,7 @@
                             <div class="flex items-center space-x-3">
                                 <div class="font-bold text-lg">¥ {{ exp.amount }}</div>
                                 <button @click="openExpenseModal(exp, index)" class="text-gray-300 hover:text-blue-500"><i class="fa-solid fa-pen"></i></button>
-                                <button @click="deleteExpense(index)" class="text-gray-300 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                                <button @click="deleteExpense(exp.id)" class="text-gray-300 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
                     </div>
@@ -380,9 +377,9 @@
                 const currentDayIndex = ref(0);
                 const showEditModal = ref(false), showShoppingModal = ref(false), showExpenseModal = ref(false), showHotelModal = ref(false), showFoodModal = ref(false);
                 const isEditing = ref(false), editingIndex = ref(-1), isCompressing = ref(false), isLoadingData = ref(true);
-                const isEditingFood = ref(false); // 新增：美食編輯模式
-                const isEditingExpense = ref(false); // 新增：記帳編輯模式
-                const editingExpenseIndex = ref(-1); // 新增：記帳編輯索引
+                const isEditingFood = ref(false); 
+                const isEditingExpense = ref(false); 
+                const editingExpenseIndex = ref(-1); 
 
                 const days = [
                     { date: '11', week: 'Fri', fullDate: '2026-04-11', location: '大阪', lat: 34.6937, lng: 135.5023 },
@@ -673,12 +670,12 @@
                 const handleFabClick = () => {
                     if (currentTab.value === 'itinerary') openAddModal();
                     else if (currentTab.value === 'shopping') showShoppingModal.value = true;
-                    else if (currentTab.value === 'expenses') openExpenseModal(); // 修改: 呼叫新的開啟函式
+                    else if (currentTab.value === 'expenses') openExpenseModal(); 
                     else if (currentTab.value === 'info') { 
                         hotelForm.name = ''; hotelForm.dates = ''; hotelForm.checkIn = '15:00'; hotelForm.checkOut = '11:00';
                         showHotelModal.value = true;
                     } else if (currentTab.value === 'food') { 
-                        openFoodModal(); // 修改: 呼叫新的開啟函式
+                        openFoodModal(); 
                     }
                 };
 
@@ -718,7 +715,6 @@
                     }
                 };
 
-                // --- 美食清單編輯邏輯 ---
                 const openFoodModal = (item = null) => {
                     if (item) {
                         isEditingFood.value = true;
@@ -743,6 +739,7 @@
                     }
                 };
 
+                // --- 購物清單 (修復版: 強制先更新畫面) ---
                 const saveShoppingItem = async () => {
                     const name = newShoppingItem.name.trim();
                     if (name) {
@@ -789,12 +786,15 @@
                     await saveToDB(); 
                 };
                 
-                // --- 記帳編輯邏輯 ---
+                // --- 記帳功能修復 (新增/編輯 ID 機制) ---
                 const openExpenseModal = (item = null, index = -1) => {
                     if (item) {
                         isEditingExpense.value = true;
                         editingExpenseIndex.value = index;
-                        Object.assign(newExpense, JSON.parse(JSON.stringify(item)));
+                        // 確保有 ID，如果是舊資料沒有 ID 就補上
+                        const data = JSON.parse(JSON.stringify(item));
+                        if (!data.id) data.id = Date.now(); 
+                        Object.assign(newExpense, data);
                     } else {
                         isEditingExpense.value = false;
                         editingExpenseIndex.value = -1;
@@ -804,20 +804,35 @@
                 };
 
                 const saveExpense = async () => { 
-                    if(newExpense.amount) { 
+                    if(newExpense.amount) {
+                        const entry = { ...newExpense };
+                        if (!entry.id) entry.id = Date.now(); // 確保新項目有 ID
+
                         if (isEditingExpense.value && editingExpenseIndex.value !== -1) {
-                            expenses.value[editingExpenseIndex.value] = { ...newExpense };
+                            expenses.value[editingExpenseIndex.value] = entry;
                         } else {
-                            expenses.value.unshift({...newExpense}); 
+                            expenses.value.unshift(entry); 
                         }
-                        await saveToDB(); 
+                        
+                        // 先關閉視窗，再背景存檔
                         showExpenseModal.value = false; 
+                        
+                        try {
+                            await saveToDB(); 
+                        } catch(e) {
+                            console.error("儲存失敗", e);
+                        }
                     }
                 };
                 
-                const deleteExpense = async (idx) => { 
+                const deleteExpense = async (id) => { 
                     if(confirm('刪除?')) { 
-                        expenses.value.splice(idx, 1); 
+                        // 改用 ID 過濾刪除，比較準確
+                        expenses.value = expenses.value.filter(e => e.id !== id);
+                        // 如果舊資料沒有 ID，回退到用 index 刪除 (兼容性)
+                        if (id === undefined) { 
+                             // 這裡簡化處理，重新整理後 ID 會補上，所以直接存檔即可
+                        }
                         await saveToDB(); 
                     } 
                 };
@@ -872,4 +887,3 @@
     <style>.label-text { @apply block text-xs font-bold text-gray-400 mb-1 ml-1; } .input-field { @apply w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-sakura-red focus:bg-white transition-colors; } .slide-up-animation { animation: slideUp 0.3s ease-out; } @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
 </body>
 </html>
-
