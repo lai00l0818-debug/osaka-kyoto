@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (風格清單版)</title>
+    <title>關西之旅 2026 (購物優化版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -49,18 +49,11 @@
         .handle { touch-action: none; cursor: grab; } .handle:active { cursor: grabbing; }
 
         .paper-list { background-image: linear-gradient(#f1f1f1 .1em, transparent .1em); background-size: 100% 3em; }
-
-        .bg-custom-pattern {
-            background-image: url('./background.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
 
-    <div id="app" v-cloak class="h-full w-full bg-custom-pattern shadow-2xl flex flex-col relative">
+    <div id="app" v-cloak class="h-full w-full bg-white shadow-2xl flex flex-col relative">
         
         <div v-if="isLoadingData" class="page-loading">
             <div class="loader w-10 h-10 border-4 mb-4 text-sakura-red"></div>
@@ -76,14 +69,14 @@
                 <p class="text-sm md:text-base font-medium opacity-90 mt-2 text-shadow"><i class="fa-regular fa-calendar mr-2"></i>2026.04.11 - 04.19</p>
             </div>
             <div class="absolute bottom-6 right-6 md:right-10 flex space-x-3 z-20 overflow-x-auto no-scrollbar max-w-[60vw] pr-2">
-                <button v-for="tab in ['packing', 'itinerary', 'info', 'food', 'shopping', 'expenses']" :key="tab" @click="currentTab = tab" 
+                <button v-for="tab in ['packing', 'itinerary', 'food', 'shopping', 'info', 'expenses']" :key="tab" @click="currentTab = tab" 
                     :class="['w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm', currentTab === tab ? 'bg-sakura-red text-white scale-110' : 'bg-white/90 text-gray-500 hover:bg-white']">
                     <i :class="getTabIcon(tab)" class="text-base"></i>
                 </button>
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto no-scrollbar relative pb-20">
+        <main class="flex-1 overflow-y-auto no-scrollbar relative bg-gray-50 pb-20">
             <div class="w-full h-full max-w-7xl mx-auto"> 
                 
                 <div v-if="currentTab === 'itinerary'" class="h-full flex flex-col">
@@ -112,10 +105,10 @@
                         <div class="md:col-span-9 lg:col-span-9 space-y-0" id="itinerary-list">
                             <div v-for="(item, index) in currentDayItinerary" :key="item.id" class="relative group itinerary-item">
                                 <div v-if="index > 0" class="flex items-center justify-center py-2 relative">
-                                    <div class="h-8 w-0.5 bg-gray-200/50 absolute top-0 bottom-0 z-0"></div>
+                                    <div class="h-8 w-0.5 bg-gray-200 absolute top-0 bottom-0 z-0"></div>
                                     <div class="bg-white border border-gray-200 text-gray-400 text-xs px-3 py-1 rounded-full z-10 flex items-center space-x-1 shadow-sm"><i :class="getTransportIcon(item.transportType)"></i><span>{{ item.transportTime }} min</span></div>
                                 </div>
-                                <div v-else-if="index === 0 && !item.isFlight" class="flex items-center justify-center py-2 pb-4"><div class="text-xs text-gray-500 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm"><i class="fa-solid fa-hotel mr-1"></i> 從飯店出發約 {{ item.transportTime }} min</div></div>
+                                <div v-else-if="index === 0 && !item.isFlight" class="flex items-center justify-center py-2 pb-4"><div class="text-xs text-gray-400 bg-gray-200 px-3 py-1 rounded-full"><i class="fa-solid fa-hotel mr-1"></i> 從飯店出發約 {{ item.transportTime }} min</div></div>
 
                                 <div @click="openMap(item.name)" :class="['relative bg-white rounded-2xl p-6 card-shadow border-l-4 cursor-pointer active:scale-[0.99] transition-transform hover:shadow-lg', getCategoryColor(item.category)]">
                                     <div class="absolute top-4 right-4 text-gray-300 handle cursor-move hover:text-gray-500 p-2 z-20 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full shadow-sm"><i class="fa-solid fa-grip-lines text-xl"></i></div>
@@ -138,7 +131,7 @@
                 </div>
 
                 <div v-if="currentTab === 'packing'" class="p-4 md:p-8 space-y-8">
-                    <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center bg-white/60 backdrop-blur-sm inline-block px-4 py-2 rounded-full mx-auto shadow-sm"><i class="fa-solid fa-suitcase-rolling text-sakura-red mr-3"></i>行前準備清單</h2></div>
+                    <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center"><i class="fa-solid fa-suitcase-rolling text-sakura-red mr-3"></i>行前準備清單</h2></div>
 
                     <div class="bg-white rounded-2xl shadow-lg border-2 border-dashed border-gray-300 overflow-hidden relative">
                         <div class="bg-gray-100 p-4 border-b border-gray-200 flex justify-between items-center">
@@ -180,17 +173,15 @@
                 </div>
 
                 <div v-if="currentTab === 'food'" class="p-4 md:p-8 pb-24">
-                    <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center bg-white/60 backdrop-blur-sm inline-block px-4 py-2 rounded-full mx-auto shadow-sm"><i class="fa-solid fa-utensils text-sakura-red mr-3"></i>美食清單 阿姆阿姆</h2></div>
-
-                    <div v-if="foodList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[50vh] bg-white/50 backdrop-blur-sm rounded-3xl mx-4">
-                        <i class="fa-solid fa-utensils text-6xl text-gray-300 mb-4"></i>
-                        <p class="font-bold text-gray-500">尚無美食清單</p>
-                        <p class="text-xs mt-2 text-gray-400">點擊右下角按鈕新增</p>
+                    <div v-if="foodList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[50vh]">
+                        <i class="fa-solid fa-utensils text-6xl text-gray-200 mb-4"></i>
+                        <p>尚無美食清單</p>
+                        <p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p>
                     </div>
 
                     <div v-else class="space-y-6">
                         <div v-if="osakaFoods.length > 0">
-                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-blue-400 pl-3 bg-white/80 backdrop-blur-sm py-2 rounded-r-lg inline-block pr-4 shadow-sm"><span class="mr-2">🏯</span>大阪美食</h3>
+                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-blue-400 pl-3"><span class="mr-2">🏯</span>大阪美食</h3>
                             <div class="grid grid-cols-2 gap-3">
                                 <div v-for="food in osakaFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow p-4 relative cursor-pointer hover:shadow-lg transition-transform active:scale-95 border border-gray-50">
                                     <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-2 z-10"><i class="fa-solid fa-trash-can text-sm"></i></button>
@@ -203,7 +194,7 @@
                             </div>
                         </div>
                         <div v-if="kyotoFoods.length > 0">
-                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-red-400 pl-3 bg-white/80 backdrop-blur-sm py-2 rounded-r-lg inline-block pr-4 shadow-sm"><span class="mr-2">⛩️</span>京都美食</h3>
+                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-red-400 pl-3"><span class="mr-2">⛩️</span>京都美食</h3>
                             <div class="grid grid-cols-2 gap-3">
                                 <div v-for="food in kyotoFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow p-4 relative cursor-pointer hover:shadow-lg transition-transform active:scale-95 border border-gray-50">
                                     <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-2 z-10"><i class="fa-solid fa-trash-can text-sm"></i></button>
@@ -216,6 +207,29 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div v-if="currentTab === 'shopping'" class="p-4 md:p-8 pb-24">
+                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh]">
+                        <i class="fa-solid fa-basket-shopping text-6xl text-gray-200 mb-4"></i>
+                        <p>尚無購物清單</p>
+                        <p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p>
+                     </div>
+                     <div v-else class="grid grid-cols-2 gap-3">
+                        <div v-for="(item, index) in shoppingList" :key="item.id || index" class="bg-white rounded-xl card-shadow p-4 flex flex-col justify-between border border-gray-50 relative group">
+                            <button @click="deleteShoppingItem(index)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-1 z-10">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                            
+                            <div class="pr-6">
+                                <div class="flex items-start mb-2">
+                                    <input type="checkbox" v-model="item.checked" @change="saveToDB" class="w-5 h-5 accent-sakura-red cursor-pointer mt-1 shrink-0">
+                                    <span :class="['ml-2 font-bold text-gray-800 break-words line-clamp-2', item.checked ? 'line-through text-gray-400' : '']">{{ item.name }}</span>
+                                </div>
+                            </div>
+                            <div v-if="item.checked" class="text-xs text-gray-400 mt-2 text-right">已購買</div>
+                        </div>
+                     </div>
                 </div>
 
                 <div v-if="currentTab === 'info'" class="space-y-8 pb-10 p-4 md:p-8">
@@ -263,19 +277,9 @@
                     </div>
                 </div>
 
-                <div v-if="currentTab === 'shopping'" class="p-4 md:p-8">
-                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh] bg-white/50 backdrop-blur-sm rounded-3xl mx-4"><i class="fa-solid fa-basket-shopping text-6xl text-gray-300 mb-4"></i><p class="font-bold text-gray-500">尚無購物清單</p><p class="text-xs mt-2 text-gray-400">點擊右下角按鈕新增</p></div>
-                     <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        <div v-for="(item, index) in shoppingList" :key="index" class="bg-white rounded-xl card-shadow overflow-hidden group">
-                            <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden"><img v-if="item.image" :src="item.image" class="w-full h-full object-cover"><i v-else class="fa-solid fa-camera text-gray-300 text-3xl"></i></div>
-                            <div class="p-4"><h4 class="font-bold text-gray-700 truncate">{{ item.name }}</h4><div class="flex justify-between mt-2"><label class="flex items-center cursor-pointer"><input type="checkbox" v-model="item.checked" class="w-5 h-5 accent-sakura-red"><span class="text-xs ml-2 text-gray-400" v-if="item.checked">已購買</span></label><button @click="deleteShoppingItem(index)"><i class="fa-solid fa-trash-can text-gray-300 hover:text-red-400"></i></button></div></div>
-                        </div>
-                     </div>
-                </div>
-
                 <div v-if="currentTab === 'expenses'" class="flex flex-col h-full p-4 md:p-8">
                     <div class="bg-white p-6 rounded-2xl card-shadow text-center mb-6 max-w-2xl mx-auto w-full"><p class="text-sm text-gray-400">總支出 (JPY)</p><div class="text-5xl font-bold text-sakura-red mt-3">¥ {{ totalExpenses.toLocaleString() }}</div><div class="mt-4 flex justify-center space-x-4 text-xs text-gray-500"><span>現金: {{ cashExpenses.toLocaleString() }}</span><span>信用卡: {{ cardExpenses.toLocaleString() }}</span></div></div>
-                    <div v-if="!expenses || expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400 bg-white/50 backdrop-blur-sm rounded-3xl mx-4"><i class="fa-solid fa-receipt text-6xl text-gray-300 mb-4"></i><p class="font-bold text-gray-500">尚無記帳紀錄</p></div>
+                    <div v-if="!expenses || expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400"><i class="fa-solid fa-receipt text-6xl text-gray-200 mb-4"></i><p>尚無記帳紀錄</p></div>
                     <div class="space-y-3 pb-20 max-w-4xl mx-auto w-full">
                         <div v-for="(exp, index) in expenses" :key="index" class="bg-white p-4 rounded-xl flex justify-between items-center card-shadow">
                             <div class="flex items-center"><div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 mr-3"><i :class="getExpenseIcon(exp.category)"></i></div><div><div class="font-bold text-gray-700">{{ exp.name }}</div><div class="text-xs text-gray-400">{{ exp.date }} · {{ exp.category }}</div></div></div>
@@ -322,13 +326,13 @@
         <div v-if="showShoppingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showShoppingModal = false">
             <div class="bg-white w-full max-w-md rounded-2xl p-8 m-4 shadow-2xl">
                 <h3 class="font-bold text-xl mb-6 text-center">新增購物</h3>
-                <input type="text" v-model="newShoppingItem.name" class="input-field mb-6" placeholder="商品名稱">
-                <label class="block w-full h-40 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-sakura-red bg-gray-50">
-                    <img v-if="newShoppingItem.image" :src="newShoppingItem.image" class="h-full object-contain">
-                    <div v-else class="text-center text-gray-400"><i class="fa-solid fa-camera text-2xl mb-2"></i><br>上傳圖片</div>
-                    <input type="file" @change="handleShoppingImageUpload" class="hidden" accept="image/*">
-                </label>
-                <button @click="saveShoppingItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">加入</button>
+                <div class="space-y-4">
+                    <div>
+                        <label class="label-text">商品名稱</label>
+                        <input type="text" v-model="newShoppingItem.name" class="input-field" placeholder="請輸入商品名稱">
+                    </div>
+                </div>
+                <button @click="saveShoppingItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">加入清單</button>
             </div>
         </div>
         
@@ -559,7 +563,7 @@
                     }
                 };
 
-                // --- 新增: 匯出與匯入功能 ---
+                // --- 匯出與匯入 ---
                 const exportData = async () => {
                     const data = {
                         itineraryData: itineraryData,
@@ -603,7 +607,6 @@
                     };
                     reader.readAsText(file);
                 };
-                // --------------------------
 
                 const currentDayItinerary = computed(() => itineraryData[currentDayIndex.value] || []);
                 const totalExpenses = computed(() => (expenses.value || []).reduce((sum, item) => sum + Number(item.amount || 0), 0));
@@ -650,11 +653,8 @@
                     }
                 };
                 
-                const handleShoppingImageUpload = async (e) => {
-                    if (e.target.files[0]) {
-                        newShoppingItem.image = await compressImage(e.target.files[0]);
-                    }
-                };
+                // 購物圖片上傳保留函式結構但移除功能
+                const handleShoppingImageUpload = async (e) => { return; };
 
                 const handleFoodImageUpload = async (e) => {
                     if (e.target.files[0]) {
@@ -719,6 +719,20 @@
                     }
                 };
 
+                // --- 修復購物清單新增功能 ---
+                const saveShoppingItem = async () => {
+                    if (newShoppingItem.name) {
+                        shoppingList.value.push({
+                            id: Date.now(),
+                            name: newShoppingItem.name,
+                            checked: false
+                        });
+                        await saveToDB();
+                        showShoppingModal.value = false;
+                        newShoppingItem.name = '';
+                    }
+                };
+
                 const addPackingItem = async (type) => {
                     const text = packingInputs[type].trim();
                     if(text) {
@@ -740,7 +754,6 @@
                 const confirmDelete = async () => { if(confirm('刪除?')) { itineraryData[currentDayIndex.value].splice(editingIndex.value, 1); await saveToDB(); showEditModal.value = false; } };
                 const removeImage = (idx) => editForm.images.splice(idx, 1);
                 
-                const saveShoppingItem = async () => { if(newShoppingItem.name) { shoppingList.value.push({...newShoppingItem}); await saveToDB(); showShoppingModal.value = false; newShoppingItem.name=''; newShoppingItem.image=null; }};
                 const deleteShoppingItem = async (idx) => { shoppingList.value.splice(idx, 1); await saveToDB(); };
                 
                 const saveExpense = async () => { if(newExpense.amount) { expenses.value.unshift({...newExpense}); await saveToDB(); showExpenseModal.value = false; newExpense.name=''; newExpense.amount=''; }};
@@ -788,7 +801,7 @@
                     packingList, packingInputs, addPackingItem, removePackingItem, savePacking,
                     openMap, openImage, handleItineraryImageUpload, removeImage,
                     weather, calcInput, calcFormula, calcResultTwd, appendCalc, clearCalc, calculateFinal,
-                    exportData, importData // 新增
+                    exportData, importData 
                 };
             }
         }).mount('#app');
@@ -796,3 +809,5 @@
     <style>.label-text { @apply block text-xs font-bold text-gray-400 mb-1 ml-1; } .input-field { @apply w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-sakura-red focus:bg-white transition-colors; } .slide-up-animation { animation: slideUp 0.3s ease-out; } @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
 </body>
 </html>
+
+
