@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (最終救援版)</title>
+    <title>關西之旅 2026 (輕量穩定版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -38,8 +38,12 @@
         [v-cloak] { display: none; }
         .page-loading { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
         
+        /* 計算機按鈕樣式 */
         .calc-btn { @apply h-12 rounded-lg bg-gray-50 text-gray-600 font-bold active:bg-gray-200 transition-colors shadow-sm border border-gray-100; }
         .calc-btn-op { @apply bg-orange-50 text-orange-500 border-orange-100 active:bg-orange-100; }
+        .calc-btn-eq { @apply bg-sakura-red text-white active:bg-sakura-dark shadow-md; }
+
+        /* 拖曳樣式 */
         .sortable-ghost { opacity: 0.4; background-color: #fff0f5; border: 2px dashed #ffb7b2; }
         .sortable-fallback { opacity: 1 !important; background-color: white; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); transform: scale(1.02); border-radius: 1rem; cursor: grabbing; }
         .handle { touch-action: none; cursor: grab; }
@@ -52,7 +56,7 @@
         
         <div v-if="isLoadingData" class="page-loading">
             <div class="loader w-10 h-10 border-4 mb-4 text-sakura-red"></div>
-            <p class="text-gray-500 font-bold">資料修復與載入中...</p>
+            <p class="text-gray-500 font-bold">載入中...</p>
         </div>
 
         <header class="relative h-[250px] md:h-[300px] bg-gray-200 overflow-hidden shrink-0 group">
@@ -64,7 +68,7 @@
                 <p class="text-sm md:text-base font-medium opacity-90 mt-2 text-shadow"><i class="fa-regular fa-calendar mr-2"></i>2026.04.11 - 04.19</p>
             </div>
             <div class="absolute bottom-6 right-6 md:right-10 flex space-x-3 z-20 overflow-x-auto no-scrollbar max-w-[60vw] pr-2">
-                <button v-for="tab in ['packing', 'itinerary', 'food', 'shopping', 'info', 'expenses']" :key="tab" @click="currentTab = tab" 
+                <button v-for="tab in ['packing', 'itinerary', 'food', 'shopping', 'info']" :key="tab" @click="currentTab = tab" 
                     :class="['w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm', currentTab === tab ? 'bg-sakura-red text-white scale-110' : 'bg-white/90 text-gray-500 hover:bg-white']">
                     <i :class="getTabIcon(tab)" class="text-base"></i>
                 </button>
@@ -131,7 +135,7 @@
                         </div>
                         <div class="p-4 space-y-3 paper-list">
                             <div v-for="(item, index) in packingList.lai" :key="index" class="flex items-center group">
-                                <input type="checkbox" v-model="item.checked" @change="saveToDB" class="w-5 h-5 accent-gray-800 cursor-pointer rounded-full">
+                                <input type="checkbox" v-model="item.checked" @change="savePacking" class="w-5 h-5 accent-gray-800 cursor-pointer rounded-full">
                                 <span :class="['ml-3 flex-1 text-gray-700 transition-all text-lg', item.checked ? 'line-through text-gray-400 opacity-50' : '']">{{ item.text }}</span>
                                 <button @click="removePackingItem('lai', index)" class="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2"><i class="fa-solid fa-xmark"></i></button>
                             </div>
@@ -149,7 +153,7 @@
                         </div>
                         <div class="p-4 space-y-3 paper-list">
                             <div v-for="(item, index) in packingList.ze" :key="index" class="flex items-center group">
-                                <input type="checkbox" v-model="item.checked" @change="saveToDB" class="w-5 h-5 accent-khaki-main cursor-pointer rounded-full">
+                                <input type="checkbox" v-model="item.checked" @change="savePacking" class="w-5 h-5 accent-khaki-main cursor-pointer rounded-full">
                                 <span :class="['ml-3 flex-1 text-gray-700 transition-all text-lg', item.checked ? 'line-through text-gray-400 opacity-50' : '']">{{ item.text }}</span>
                                 <button @click="removePackingItem('ze', index)" class="text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2"><i class="fa-solid fa-xmark"></i></button>
                             </div>
@@ -221,6 +225,7 @@
                 </div>
 
                 <div v-if="currentTab === 'info'" class="space-y-8 pb-10 p-4 md:p-8">
+                    
                     <div class="bg-white rounded-2xl p-6 card-shadow border-t-4 border-green-500">
                         <h3 class="text-lg font-bold text-gray-700 mb-2"><i class="fa-solid fa-rotate mr-2 text-green-500"></i>手動備份資料</h3>
                         <div class="flex space-x-3">
@@ -245,36 +250,29 @@
                         <button @click="calculateFinal()" class="w-full mt-2 h-12 rounded-lg bg-sakura-red text-white font-bold shadow-md active:bg-sakura-dark transition-colors text-lg">=</button>
                     </div>
 
-                    <div class="bg-red-50 rounded-2xl p-6 card-shadow border border-red-100 mt-8">
-                        <h3 class="text-lg font-bold text-red-500 mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>工廠模式</h3>
-                        <p class="text-xs text-red-400 mb-4">如果發現功能異常或無法新增，請點擊下方按鈕重置 App (會清除所有資料)。</p>
-                        <button @click="hardReset" class="w-full bg-white border border-red-200 text-red-500 hover:bg-red-50 py-3 rounded-xl font-bold transition-colors flex items-center justify-center shadow-sm"><i class="fa-solid fa-bomb mr-2"></i>重置所有資料</button>
-                    </div>
-                </div>
-
-                <div v-if="currentTab === 'expenses'" class="flex flex-col h-full p-4 md:p-8">
-                    <div class="bg-white p-6 rounded-2xl card-shadow text-center mb-6 max-w-2xl mx-auto w-full"><p class="text-sm text-gray-400">總支出 (JPY)</p><div class="text-5xl font-bold text-sakura-red mt-3">¥ {{ totalExpenses.toLocaleString() }}</div><div class="mt-4 flex justify-center space-x-4 text-xs text-gray-500"><span>現金: {{ cashExpenses.toLocaleString() }}</span><span>信用卡: {{ cardExpenses.toLocaleString() }}</span></div></div>
-                    
-                    <div v-if="expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400"><i class="fa-solid fa-receipt text-6xl text-gray-200 mb-4"></i><p>尚無記帳紀錄</p></div>
-                    
-                    <div v-else class="space-y-3 pb-20 max-w-4xl mx-auto w-full">
-                        <div v-for="(exp, index) in expenses" :key="index" class="bg-white p-4 rounded-xl flex justify-between items-center card-shadow relative group">
-                            <div class="flex items-center flex-1">
-                                <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 mr-3"><i :class="getExpenseIcon(exp.category)"></i></div>
-                                <div><div class="font-bold text-gray-700">{{ exp.name }}</div><div class="text-xs text-gray-400">{{ exp.date }} · {{ exp.category }}</div></div>
-                            </div>
-                            <div class="flex items-center space-x-3">
-                                <div class="font-bold text-lg">¥ {{ exp.amount }}</div>
-                                <button @click="openExpenseModal(exp, index)" class="text-gray-300 hover:text-blue-500"><i class="fa-solid fa-pen"></i></button>
-                                <button @click="deleteExpense(index)" class="text-gray-300 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                    <div class="bg-white rounded-2xl p-6 card-shadow">
+                        <h3 class="text-lg font-bold text-gray-700 mb-4 flex justify-between items-center"><span><i class="fa-solid fa-bed mr-2 text-purple-400"></i>住宿資訊</span></h3>
+                        <div v-if="hotels.length === 0" class="text-center py-8 text-gray-400 text-sm">尚無住宿資料，請點擊 + 新增</div>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div v-for="(hotel, index) in hotels" :key="hotel.id || index" class="p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors relative group">
+                                <button @click="deleteHotel(index)" class="absolute top-2 right-2 text-gray-200 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                                <div class="text-xs text-sakura-red mb-1 font-bold">{{ hotel.dates }}</div><div class="font-bold text-gray-800 text-lg mb-2">{{ hotel.name }}</div>
+                                <div class="flex items-center text-xs text-gray-500 mb-3 space-x-3 bg-gray-50 p-2 rounded-lg"><span v-if="hotel.checkIn"><i class="fa-solid fa-clock mr-1 text-green-400"></i>入住 {{ hotel.checkIn }}</span><span class="text-gray-300">|</span><span v-if="hotel.checkOut"><i class="fa-solid fa-person-walking-luggage mr-1 text-orange-400"></i>退房 {{ hotel.checkOut }}</span></div>
+                                <div class="flex space-x-3"><a :href="'https://www.google.com/maps/search/?api=1&query=' + hotel.name" target="_blank" class="flex-1 bg-white border border-gray-200 text-center py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"><i class="fa-solid fa-location-arrow mr-1"></i>導航</a></div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="bg-red-50 rounded-2xl p-6 card-shadow border border-red-100">
+                        <h3 class="text-lg font-bold text-red-500 mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>資料救援區</h3>
+                        <p class="text-xs text-red-400 mb-4">如果發現無法新增資料，請嘗試清除圖片以釋放空間。</p>
+                        <button @click="clearAllImages" class="w-full bg-white border border-red-200 text-red-500 hover:bg-red-50 py-3 rounded-xl font-bold transition-colors flex items-center justify-center shadow-sm"><i class="fa-solid fa-eraser mr-2"></i>清除所有圖片 (保留文字)</button>
                     </div>
                 </div>
             
             </div> </main>
 
-        <button v-if="['itinerary','shopping','expenses','info','food'].includes(currentTab)" @click="handleFabClick" class="fixed bottom-24 right-6 w-16 h-16 bg-sakura-red text-white rounded-full shadow-xl flex items-center justify-center text-3xl btn-active z-40 hover:scale-110 transition-transform"><i class="fa-solid fa-plus"></i></button>
+        <button v-if="['itinerary','shopping','info','food'].includes(currentTab)" @click="handleFabClick" class="fixed bottom-24 right-6 w-16 h-16 bg-sakura-red text-white rounded-full shadow-xl flex items-center justify-center text-3xl btn-active z-40 hover:scale-110 transition-transform"><i class="fa-solid fa-plus"></i></button>
 
         <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" @click.self="closeModal">
             <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 h-[90vh] sm:h-auto flex flex-col shadow-2xl slide-up-animation">
@@ -315,20 +313,6 @@
             </div>
         </div>
         
-        <div v-if="showExpenseModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" @click.self="showExpenseModal = false">
-             <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-8 shadow-2xl">
-                <h3 class="font-bold text-xl mb-6 text-center">{{ isEditingExpense ? '編輯記帳' : '新增記帳' }}</h3>
-                <div class="space-y-4">
-                    <select v-model="newExpense.category" class="input-field"><option>飲食</option><option>交通</option><option>購物</option><option>門票</option><option>住宿</option><option>其他</option></select>
-                    <input type="text" v-model="newExpense.name" class="input-field" placeholder="項目">
-                    <input type="number" v-model="newExpense.amount" class="input-field" placeholder="金額">
-                    <div class="flex space-x-3"><button @click="newExpense.method='現金'" :class="['flex-1 py-2 rounded-lg border', newExpense.method==='現金'?'bg-sakura-red text-white':'bg-white']">現金</button><button @click="newExpense.method='信用卡'" :class="['flex-1 py-2 rounded-lg border', newExpense.method==='信用卡'?'bg-sakura-red text-white':'bg-white']">信用卡</button></div>
-                    <input type="date" v-model="newExpense.date" class="input-field">
-                </div>
-                <button @click="saveExpense" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">儲存</button>
-             </div>
-        </div>
-
         <div v-if="showHotelModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" @click.self="showHotelModal = false">
             <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-8 shadow-2xl slide-up-animation">
                <h3 class="font-bold text-xl mb-6 text-center">新增住宿</h3>
@@ -398,6 +382,12 @@
                     { date: '19', week: 'Sat', fullDate: '2026-04-19', location: '關西機場', lat: 34.4320, lng: 135.2304 }
                 ];
                 
+                const defaultHotels = [
+                    { dates: '4/11-14', name: 'BRACKETS HOTEL', checkIn: '15:00', checkOut: '11:00' }, 
+                    { dates: '4/14-17', name: 'Ms Hotel', checkIn: '16:00', checkOut: '10:00' }, 
+                    { dates: '4/17-18', name: 'Hotel Meldia', checkIn: '15:00', checkOut: '11:00' }, 
+                    { dates: '4/18-19', name: 'EZ HOTEL', checkIn: '15:00', checkOut: '10:00' }
+                ];
                 const defaultItinerary = { 0: [{ id: 1, category: 'flight', name: 'TPE -> KIX', time: '18:00', note: '抵達關西', transportTime: 0, transportType: 'car', isFlight: true, images: [] }] };
 
                 const itineraryData = reactive({});
@@ -566,7 +556,7 @@
                     }
                     foodList.value.forEach(item => item.image = null);
                     saveToDB();
-                    alert('清理完成！');
+                    alert('清理完成！現在應該可以正常新增資料了。');
                 };
 
                 const exportData = async () => {
@@ -663,12 +653,12 @@
                 const handleFabClick = () => {
                     if (currentTab.value === 'itinerary') openAddModal();
                     else if (currentTab.value === 'shopping') showShoppingModal.value = true;
-                    else if (currentTab.value === 'expenses') openExpenseModal(); 
+                    else if (currentTab.value === 'expenses') openExpenseModal(); // 修改: 呼叫新的開啟函式
                     else if (currentTab.value === 'info') { 
                         hotelForm.name = ''; hotelForm.dates = ''; hotelForm.checkIn = '15:00'; hotelForm.checkOut = '11:00';
                         showHotelModal.value = true;
                     } else if (currentTab.value === 'food') { 
-                        openFoodModal(); 
+                        openFoodModal(); // 修改: 呼叫新的開啟函式
                     }
                 };
 
@@ -777,6 +767,7 @@
                     saveToDB(); 
                 };
                 
+                // --- 記帳功能修復 (新增/編輯 ID 機制) ---
                 const openExpenseModal = (item = null, index = -1) => {
                     if (item) {
                         isEditingExpense.value = true;
