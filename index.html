@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (輕量穩定版)</title>
+    <title>關西之旅 2026 (風格清單版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
@@ -32,31 +33,38 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .card-shadow { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); }
+        .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         .btn-active:active { transform: scale(0.95); }
         .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #e94e59; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         [v-cloak] { display: none; }
         .page-loading { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
         
-        /* 計算機按鈕樣式 */
         .calc-btn { @apply h-12 rounded-lg bg-gray-50 text-gray-600 font-bold active:bg-gray-200 transition-colors shadow-sm border border-gray-100; }
         .calc-btn-op { @apply bg-orange-50 text-orange-500 border-orange-100 active:bg-orange-100; }
         .calc-btn-eq { @apply bg-sakura-red text-white active:bg-sakura-dark shadow-md; }
 
-        /* 拖曳樣式 */
         .sortable-ghost { opacity: 0.4; background-color: #fff0f5; border: 2px dashed #ffb7b2; }
         .sortable-fallback { opacity: 1 !important; background-color: white; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); transform: scale(1.02); border-radius: 1rem; cursor: grabbing; }
-        .handle { touch-action: none; cursor: grab; }
+        .handle { touch-action: none; cursor: grab; } .handle:active { cursor: grabbing; }
+
         .paper-list { background-image: linear-gradient(#f1f1f1 .1em, transparent .1em); background-size: 100% 3em; }
+
+        .bg-custom-pattern {
+            background-image: url('./background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
 
-    <div id="app" v-cloak class="h-full w-full bg-white shadow-2xl flex flex-col relative">
+    <div id="app" v-cloak class="h-full w-full bg-custom-pattern shadow-2xl flex flex-col relative">
         
         <div v-if="isLoadingData" class="page-loading">
             <div class="loader w-10 h-10 border-4 mb-4 text-sakura-red"></div>
-            <p class="text-gray-500 font-bold">載入中...</p>
+            <p class="text-gray-500 font-bold">載入資料中...</p>
         </div>
 
         <header class="relative h-[250px] md:h-[300px] bg-gray-200 overflow-hidden shrink-0 group">
@@ -68,14 +76,14 @@
                 <p class="text-sm md:text-base font-medium opacity-90 mt-2 text-shadow"><i class="fa-regular fa-calendar mr-2"></i>2026.04.11 - 04.19</p>
             </div>
             <div class="absolute bottom-6 right-6 md:right-10 flex space-x-3 z-20 overflow-x-auto no-scrollbar max-w-[60vw] pr-2">
-                <button v-for="tab in ['packing', 'itinerary', 'food', 'shopping', 'info']" :key="tab" @click="currentTab = tab" 
+                <button v-for="tab in ['packing', 'itinerary', 'info', 'food', 'shopping']" :key="tab" @click="currentTab = tab" 
                     :class="['w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm', currentTab === tab ? 'bg-sakura-red text-white scale-110' : 'bg-white/90 text-gray-500 hover:bg-white']">
                     <i :class="getTabIcon(tab)" class="text-base"></i>
                 </button>
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto no-scrollbar relative bg-gray-50 pb-20">
+        <main class="flex-1 overflow-y-auto no-scrollbar relative pb-20">
             <div class="w-full h-full max-w-7xl mx-auto"> 
                 
                 <div v-if="currentTab === 'itinerary'" class="h-full flex flex-col">
@@ -88,6 +96,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="p-4 md:p-8 grid md:grid-cols-12 gap-6">
                         <div class="md:col-span-3 lg:col-span-3">
                             <div class="p-6 bg-gradient-to-br from-blue-50 to-white rounded-2xl flex md:flex-col items-center justify-between md:justify-center card-shadow border border-blue-100 sticky top-32">
@@ -99,13 +108,15 @@
                                 <div class="text-center"><i v-if="weather.loading" class="fa-solid fa-cloud text-gray-200 text-5xl"></i><i v-else :class="['text-5xl drop-shadow-md transition-all duration-500', weather.iconClass]"></i></div>
                             </div>
                         </div>
+
                         <div class="md:col-span-9 lg:col-span-9 space-y-0" id="itinerary-list">
                             <div v-for="(item, index) in currentDayItinerary" :key="item.id" class="relative group itinerary-item">
                                 <div v-if="index > 0" class="flex items-center justify-center py-2 relative">
-                                    <div class="h-8 w-0.5 bg-gray-200 absolute top-0 bottom-0 z-0"></div>
+                                    <div class="h-8 w-0.5 bg-gray-200/50 absolute top-0 bottom-0 z-0"></div>
                                     <div class="bg-white border border-gray-200 text-gray-400 text-xs px-3 py-1 rounded-full z-10 flex items-center space-x-1 shadow-sm"><i :class="getTransportIcon(item.transportType)"></i><span>{{ item.transportTime }} min</span></div>
                                 </div>
-                                <div v-else-if="index === 0 && !item.isFlight" class="flex items-center justify-center py-2 pb-4"><div class="text-xs text-gray-400 bg-gray-200 px-3 py-1 rounded-full"><i class="fa-solid fa-hotel mr-1"></i> 從飯店出發約 {{ item.transportTime }} min</div></div>
+                                <div v-else-if="index === 0 && !item.isFlight" class="flex items-center justify-center py-2 pb-4"><div class="text-xs text-gray-500 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm"><i class="fa-solid fa-hotel mr-1"></i> 從飯店出發約 {{ item.transportTime }} min</div></div>
+
                                 <div @click="openMap(item.name)" :class="['relative bg-white rounded-2xl p-6 card-shadow border-l-4 cursor-pointer active:scale-[0.99] transition-transform hover:shadow-lg', getCategoryColor(item.category)]">
                                     <div class="absolute top-4 right-4 text-gray-300 handle cursor-move hover:text-gray-500 p-2 z-20 w-10 h-10 flex items-center justify-center bg-white/80 rounded-full shadow-sm"><i class="fa-solid fa-grip-lines text-xl"></i></div>
                                     <div class="flex items-start">
@@ -127,7 +138,8 @@
                 </div>
 
                 <div v-if="currentTab === 'packing'" class="p-4 md:p-8 space-y-8">
-                    <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center"><i class="fa-solid fa-suitcase-rolling text-sakura-red mr-3"></i>行前準備清單</h2></div>
+                    <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center bg-white/60 backdrop-blur-sm inline-block px-4 py-2 rounded-full mx-auto shadow-sm"><i class="fa-solid fa-suitcase-rolling text-sakura-red mr-3"></i>行前準備清單</h2></div>
+
                     <div class="bg-white rounded-2xl shadow-lg border-2 border-dashed border-gray-300 overflow-hidden relative">
                         <div class="bg-gray-100 p-4 border-b border-gray-200 flex justify-between items-center">
                             <h3 class="font-bold text-gray-800 text-lg"><i class="fa-solid fa-user mr-2"></i>小賴的清單</h3>
@@ -146,6 +158,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="bg-khaki-bg rounded-2xl shadow-lg border-2 border-dashed border-khaki-main overflow-hidden relative">
                         <div class="bg-khaki-light p-4 border-b border-khaki-main flex justify-between items-center">
                             <h3 class="font-bold text-khaki-dark text-lg"><i class="fa-solid fa-user mr-2"></i>小澤的清單</h3>
@@ -167,16 +180,20 @@
                 </div>
 
                 <div v-if="currentTab === 'food'" class="p-4 md:p-8 pb-24">
-                    <div v-if="foodList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[50vh]"><i class="fa-solid fa-utensils text-6xl text-gray-200 mb-4"></i><p>尚無美食清單</p><p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p></div>
+                    <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center bg-white/60 backdrop-blur-sm inline-block px-4 py-2 rounded-full mx-auto shadow-sm"><i class="fa-solid fa-utensils text-sakura-red mr-3"></i>美食清單 阿姆阿姆</h2></div>
+
+                    <div v-if="foodList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[50vh] bg-white/50 backdrop-blur-sm rounded-3xl mx-4">
+                        <i class="fa-solid fa-utensils text-6xl text-gray-300 mb-4"></i>
+                        <p class="font-bold text-gray-500">尚無美食清單</p>
+                        <p class="text-xs mt-2 text-gray-400">點擊右下角按鈕新增</p>
+                    </div>
+
                     <div v-else class="space-y-6">
                         <div v-if="osakaFoods.length > 0">
-                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-blue-400 pl-3"><span class="mr-2">🏯</span>大阪美食</h3>
+                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-blue-400 pl-3 bg-white/80 backdrop-blur-sm py-2 rounded-r-lg inline-block pr-4 shadow-sm"><span class="mr-2">🏯</span>大阪美食</h3>
                             <div class="grid grid-cols-2 gap-3">
-                                <div v-for="food in osakaFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow p-4 relative cursor-pointer hover:shadow-lg transition-transform active:scale-95 border border-gray-50 group">
-                                    <div class="absolute top-2 right-2 flex space-x-2 z-10">
-                                        <button @click.stop="openFoodModal(food)" class="text-gray-300 hover:text-blue-500 p-1"><i class="fa-solid fa-pen text-sm"></i></button>
-                                        <button @click.stop="deleteFoodItem(food.id)" class="text-gray-300 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                                    </div>
+                                <div v-for="food in osakaFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow p-4 relative cursor-pointer hover:shadow-lg transition-transform active:scale-95 border border-gray-50">
+                                    <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-2 z-10"><i class="fa-solid fa-trash-can text-sm"></i></button>
                                     <div class="pr-6">
                                         <h4 class="font-bold text-gray-800 text-base truncate mb-1">{{ food.name }}</h4>
                                         <div class="text-xs text-sakura-red mb-2 flex items-center font-medium"><i class="fa-solid fa-location-arrow mr-1"></i>導航</div>
@@ -186,13 +203,10 @@
                             </div>
                         </div>
                         <div v-if="kyotoFoods.length > 0">
-                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-red-400 pl-3"><span class="mr-2">⛩️</span>京都美食</h3>
+                            <h3 class="text-xl font-bold text-gray-700 mb-3 flex items-center border-l-4 border-red-400 pl-3 bg-white/80 backdrop-blur-sm py-2 rounded-r-lg inline-block pr-4 shadow-sm"><span class="mr-2">⛩️</span>京都美食</h3>
                             <div class="grid grid-cols-2 gap-3">
-                                <div v-for="food in kyotoFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow p-4 relative cursor-pointer hover:shadow-lg transition-transform active:scale-95 border border-gray-50 group">
-                                    <div class="absolute top-2 right-2 flex space-x-2 z-10">
-                                        <button @click.stop="openFoodModal(food)" class="text-gray-300 hover:text-blue-500 p-1"><i class="fa-solid fa-pen text-sm"></i></button>
-                                        <button @click.stop="deleteFoodItem(food.id)" class="text-gray-300 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                                    </div>
+                                <div v-for="food in kyotoFoods" :key="food.id" @click="openMap(food.name)" class="bg-white rounded-xl card-shadow p-4 relative cursor-pointer hover:shadow-lg transition-transform active:scale-95 border border-gray-50">
+                                    <button @click.stop="deleteFoodItem(food.id)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-2 z-10"><i class="fa-solid fa-trash-can text-sm"></i></button>
                                     <div class="pr-6">
                                         <h4 class="font-bold text-gray-800 text-base truncate mb-1">{{ food.name }}</h4>
                                         <div class="text-xs text-sakura-red mb-2 flex items-center font-medium"><i class="fa-solid fa-location-arrow mr-1"></i>導航</div>
@@ -204,33 +218,18 @@
                     </div>
                 </div>
 
-                <div v-if="currentTab === 'shopping'" class="p-4 md:p-8 pb-24">
-                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh]">
-                        <i class="fa-solid fa-basket-shopping text-6xl text-gray-200 mb-4"></i>
-                        <p>尚無購物清單</p>
-                        <p class="text-xs mt-2 text-gray-300">點擊右下角按鈕新增</p>
-                     </div>
-                     <div v-else class="grid grid-cols-2 gap-3">
-                        <div v-for="(item, index) in shoppingList" :key="item.id || index" class="bg-white rounded-xl card-shadow p-4 flex flex-col justify-between border border-gray-50 relative group">
-                            <button @click="deleteShoppingItem(index)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-1 z-10"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                            <div class="pr-6">
-                                <div class="flex items-start mb-2">
-                                    <input type="checkbox" v-model="item.checked" @change="saveToDB" class="w-5 h-5 accent-sakura-red cursor-pointer mt-1 shrink-0">
-                                    <span :class="['ml-2 font-bold text-gray-800 break-words line-clamp-2', item.checked ? 'line-through text-gray-400' : '']">{{ item.name }}</span>
-                                </div>
-                            </div>
-                            <div v-if="item.checked" class="text-xs text-gray-400 mt-2 text-right">已購買</div>
-                        </div>
-                     </div>
-                </div>
-
                 <div v-if="currentTab === 'info'" class="space-y-8 pb-10 p-4 md:p-8">
-                    
                     <div class="bg-white rounded-2xl p-6 card-shadow border-t-4 border-green-500">
-                        <h3 class="text-lg font-bold text-gray-700 mb-2"><i class="fa-solid fa-rotate mr-2 text-green-500"></i>手動備份資料</h3>
+                        <h3 class="text-lg font-bold text-gray-700 mb-2"><i class="fa-solid fa-rotate mr-2 text-green-500"></i>手動同步資料</h3>
+                        <p class="text-xs text-gray-400 mb-4">因為沒有後端資料庫，請用此功能在不同裝置間轉移資料。</p>
                         <div class="flex space-x-3">
-                            <button @click="exportData" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-3 rounded-xl font-bold transition-colors flex items-center justify-center"><i class="fa-solid fa-download mr-2"></i>匯出</button>
-                            <label class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold transition-colors flex items-center justify-center cursor-pointer shadow-md"><i class="fa-solid fa-upload mr-2"></i>匯入<input type="file" @change="importData" class="hidden" accept=".json"></label>
+                            <button @click="exportData" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-3 rounded-xl font-bold transition-colors flex items-center justify-center">
+                                <i class="fa-solid fa-download mr-2"></i>匯出檔案
+                            </button>
+                            <label class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold transition-colors flex items-center justify-center cursor-pointer shadow-md">
+                                <i class="fa-solid fa-upload mr-2"></i>匯入檔案
+                                <input type="file" @change="importData" class="hidden" accept=".json">
+                            </label>
                         </div>
                     </div>
 
@@ -262,12 +261,16 @@
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="bg-red-50 rounded-2xl p-6 card-shadow border border-red-100">
-                        <h3 class="text-lg font-bold text-red-500 mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>資料救援區</h3>
-                        <p class="text-xs text-red-400 mb-4">如果發現無法新增資料，請嘗試清除圖片以釋放空間。</p>
-                        <button @click="clearAllImages" class="w-full bg-white border border-red-200 text-red-500 hover:bg-red-50 py-3 rounded-xl font-bold transition-colors flex items-center justify-center shadow-sm"><i class="fa-solid fa-eraser mr-2"></i>清除所有圖片 (保留文字)</button>
-                    </div>
+                <div v-if="currentTab === 'shopping'" class="p-4 md:p-8">
+                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh] bg-white/50 backdrop-blur-sm rounded-3xl mx-4"><i class="fa-solid fa-basket-shopping text-6xl text-gray-300 mb-4"></i><p class="font-bold text-gray-500">尚無購物清單</p><p class="text-xs mt-2 text-gray-400">點擊右下角按鈕新增</p></div>
+                     <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        <div v-for="(item, index) in shoppingList" :key="index" class="bg-white rounded-xl card-shadow overflow-hidden group">
+                            <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden"><img v-if="item.image" :src="item.image" class="w-full h-full object-cover"><i v-else class="fa-solid fa-camera text-gray-300 text-3xl"></i></div>
+                            <div class="p-4"><h4 class="font-bold text-gray-700 truncate">{{ item.name }}</h4><div class="flex justify-between mt-2"><label class="flex items-center cursor-pointer"><input type="checkbox" v-model="item.checked" class="w-5 h-5 accent-sakura-red"><span class="text-xs ml-2 text-gray-400" v-if="item.checked">已購買</span></label><button @click="deleteShoppingItem(index)"><i class="fa-solid fa-trash-can text-gray-300 hover:text-red-400"></i></button></div></div>
+                        </div>
+                     </div>
                 </div>
             
             </div> </main>
@@ -308,8 +311,13 @@
         <div v-if="showShoppingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showShoppingModal = false">
             <div class="bg-white w-full max-w-md rounded-2xl p-8 m-4 shadow-2xl">
                 <h3 class="font-bold text-xl mb-6 text-center">新增購物</h3>
-                <div class="space-y-4"><div><label class="label-text">商品名稱</label><input type="text" v-model="newShoppingItem.name" @keyup.enter="saveShoppingItem" class="input-field" placeholder="請輸入商品名稱" autofocus></div></div>
-                <button @click="saveShoppingItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">加入清單</button>
+                <input type="text" v-model="newShoppingItem.name" class="input-field mb-6" placeholder="商品名稱">
+                <label class="block w-full h-40 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-sakura-red bg-gray-50">
+                    <img v-if="newShoppingItem.image" :src="newShoppingItem.image" class="h-full object-contain">
+                    <div v-else class="text-center text-gray-400"><i class="fa-solid fa-camera text-2xl mb-2"></i><br>上傳圖片</div>
+                    <input type="file" @change="handleShoppingImageUpload" class="hidden" accept="image/*">
+                </label>
+                <button @click="saveShoppingItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">加入</button>
             </div>
         </div>
         
@@ -327,7 +335,7 @@
 
         <div v-if="showFoodModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showFoodModal = false">
             <div class="bg-white w-full max-w-md rounded-2xl p-8 m-4 shadow-2xl slide-up-animation">
-                <h3 class="font-bold text-xl mb-6 text-center">{{ isEditingFood ? '編輯美食' : '新增美食' }}</h3>
+                <h3 class="font-bold text-xl mb-6 text-center">新增美食</h3>
                 <div class="space-y-4">
                     <div>
                         <label class="label-text">地區分類</label>
@@ -339,7 +347,7 @@
                     <div><label class="label-text">店名 / 餐廳名稱</label><input type="text" v-model="newFoodItem.name" class="input-field" placeholder="例如：敘敘苑燒肉"></div>
                     <div><label class="label-text">備註 / 必吃餐點</label><textarea v-model="newFoodItem.note" class="input-field h-20" placeholder="例如：牛舌必點"></textarea></div>
                 </div>
-                <button @click="saveFoodItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">儲存</button>
+                <button @click="saveFoodItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">加入清單</button>
             </div>
         </div>
 
@@ -350,25 +358,13 @@
 
         createApp({
             setup() {
-                // 1. 更換為 LocalStorage (避免 IndexedDB 損壞問題)
-                const storage = {
-                    getItem: (key) => {
-                        const item = localStorage.getItem(key);
-                        return item ? JSON.parse(item) : null;
-                    },
-                    setItem: (key, value) => {
-                        localStorage.setItem(key, JSON.stringify(value));
-                    },
-                    clear: () => localStorage.clear()
-                };
+                localforage.config({ name: 'TripApp', storeName: 'trip_data' });
 
                 const currentTab = ref('itinerary');
                 const currentDayIndex = ref(0);
-                const showEditModal = ref(false), showShoppingModal = ref(false), showExpenseModal = ref(false), showHotelModal = ref(false), showFoodModal = ref(false);
+                // 移除了 showExpenseModal
+                const showEditModal = ref(false), showShoppingModal = ref(false), showHotelModal = ref(false), showFoodModal = ref(false);
                 const isEditing = ref(false), editingIndex = ref(-1), isCompressing = ref(false), isLoadingData = ref(true);
-                const isEditingFood = ref(false); 
-                const isEditingExpense = ref(false); 
-                const editingExpenseIndex = ref(-1); 
 
                 const days = [
                     { date: '11', week: 'Fri', fullDate: '2026-04-11', location: '大阪', lat: 34.6937, lng: 135.5023 },
@@ -392,7 +388,7 @@
 
                 const itineraryData = reactive({});
                 const shoppingList = ref([]);
-                const expenses = ref([]);
+                // 移除了 expenses 變數
                 const hotels = ref([]); 
                 const foodList = ref([]); 
                 const packingList = ref({ lai: [], ze: [] }); 
@@ -402,9 +398,9 @@
 
                 const editForm = reactive({ id: null, category: 'spot', name: '', time: '', note: '', ticket: '', transportTime: 30, transportType: 'train', images: [], image: null });
                 const newShoppingItem = reactive({ name: '', image: null, checked: false });
-                const newExpense = reactive({ category: '飲食', name: '', amount: '', method: '現金', date: new Date().toISOString().split('T')[0] });
+                // 移除了 newExpense 變數
                 const hotelForm = reactive({ name: '', dates: '', checkIn: '15:00', checkOut: '11:00' });
-                const newFoodItem = reactive({ id: null, name: '', category: 'osaka', note: '', image: null });
+                const newFoodItem = reactive({ name: '', category: 'osaka', note: '', image: null });
 
                 const calcInput = ref('');
                 const calcFormula = ref('');
@@ -434,7 +430,7 @@
                 const getCategoryBg = (cat) => ({ spot: 'bg-pink-400', food: 'bg-orange-400', shopping: 'bg-purple-400', flight: 'bg-blue-400', hotel: 'bg-indigo-400' }[cat] || 'bg-gray-400');
                 const getCategoryIcon = (cat) => ({ spot: 'fa-solid fa-camera', food: 'fa-solid fa-utensils', shopping: 'fa-solid fa-bag-shopping', flight: 'fa-solid fa-plane', hotel: 'fa-solid fa-bed' }[cat] || 'fa-solid fa-star');
                 const getTransportIcon = (t) => t === 'walk' ? 'fa-solid fa-person-walking' : t === 'car' ? 'fa-solid fa-car' : 'fa-solid fa-train-subway';
-                const getExpenseIcon = (c) => ({ '飲食': 'fa-solid fa-utensils', '交通': 'fa-solid fa-train', '購物': 'fa-solid fa-bag-shopping', '門票': 'fa-solid fa-ticket' }[c] || 'fa-solid fa-receipt');
+                // 移除了 getExpenseIcon
                 const getTabIcon = (t) => ({ 'itinerary': 'fa-solid fa-map-location-dot', 'info': 'fa-solid fa-circle-info', 'shopping': 'fa-solid fa-basket-shopping', 'expenses': 'fa-solid fa-coins', 'food': 'fa-solid fa-utensils', 'packing': 'fa-solid fa-suitcase' }[t]);
 
                 const getWeatherIconClass = (code) => {
@@ -465,6 +461,7 @@
                             weather.desc = getWeatherDesc(weather.code);
                         }
                     } catch (e) {
+                        console.error('Weather error:', e);
                         weather.temp = 'N/A';
                     } finally {
                         weather.loading = false;
@@ -484,36 +481,37 @@
                     try {
                         isLoadingData.value = true;
                         
-                        // 2. 嘗試從 localStorage 讀取 (如果讀不到會回傳 null)
-                        const dbItinerary = storage.getItem('itineraryData');
-                        const dbShopping = storage.getItem('shoppingList');
-                        const dbExpenses = storage.getItem('expenses');
-                        const dbHotels = storage.getItem('hotels'); 
-                        const dbFood = storage.getItem('foodList'); 
-                        const dbPacking = storage.getItem('packingList'); 
+                        const dbItinerary = await localforage.getItem('itineraryData');
+                        const dbShopping = await localforage.getItem('shoppingList');
+                        // 移除了 expenses 的讀取
+                        const dbHotels = await localforage.getItem('hotels'); 
+                        const dbFood = await localforage.getItem('foodList'); 
+                        const dbPacking = await localforage.getItem('packingList'); 
 
-                        // 3. 資料初始化與防呆
                         shoppingList.value = Array.isArray(dbShopping) ? dbShopping : [];
-                        expenses.value = Array.isArray(dbExpenses) ? dbExpenses : [];
-                        hotels.value = Array.isArray(dbHotels) ? dbHotels : []; 
+                        // expenses.value = ... (移除)
+                        hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; 
                         foodList.value = Array.isArray(dbFood) ? dbFood : [];
                         packingList.value = dbPacking ? dbPacking : { lai: [], ze: [] }; 
                         
-                        if (dbItinerary) {
-                            Object.assign(itineraryData, dbItinerary);
+                        if (!dbItinerary) {
+                             const oldIt = localStorage.getItem('itineraryData');
+                             if(oldIt) {
+                                 try { const parsed = JSON.parse(oldIt); Object.assign(itineraryData, parsed); } 
+                                 catch(e) { Object.assign(itineraryData, defaultItinerary); }
+                             } else { Object.assign(itineraryData, defaultItinerary); }
                         } else {
-                            Object.assign(itineraryData, defaultItinerary);
+                            Object.assign(itineraryData, dbItinerary);
                         }
                         
                         updateWeather();
 
                     } catch (e) {
                         console.error('Data load error:', e);
-                        // 出錯時初始化為空
                         Object.assign(itineraryData, defaultItinerary);
                         shoppingList.value = [];
-                        expenses.value = [];
-                        hotels.value = [];
+                        // expenses.value = []; (移除)
+                        hotels.value = defaultHotels;
                         foodList.value = [];
                         packingList.value = { lai: [], ze: [] };
                     } finally {
@@ -524,46 +522,25 @@
 
                 onMounted(loadData);
 
-                const saveToDB = () => {
+                const saveToDB = async () => {
                     try {
-                        storage.setItem('itineraryData', itineraryData);
-                        storage.setItem('shoppingList', shoppingList.value);
-                        storage.setItem('expenses', expenses.value);
-                        storage.setItem('hotels', hotels.value); 
-                        storage.setItem('foodList', foodList.value); 
-                        storage.setItem('packingList', packingList.value); 
+                        await localforage.setItem('itineraryData', JSON.parse(JSON.stringify(itineraryData)));
+                        await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value)));
+                        // 移除了 expenses 的儲存
+                        await localforage.setItem('hotels', JSON.parse(JSON.stringify(hotels.value))); 
+                        await localforage.setItem('foodList', JSON.parse(JSON.stringify(foodList.value))); 
+                        await localforage.setItem('packingList', JSON.parse(JSON.stringify(packingList.value))); 
                     } catch (e) {
-                        alert("儲存空間已滿，請清除部分圖片"); 
+                        alert("儲存失敗: " + e.message);
                     }
                 };
 
-                const hardReset = () => {
-                    if(confirm('警告：這將會刪除所有資料並回復到初始狀態，確定嗎？')) {
-                        localStorage.clear();
-                        location.reload();
-                    }
-                }
-
-                const clearAllImages = async () => {
-                    if(!confirm('確定要清除所有行程與美食的圖片嗎？這可以解決無法新增資料的問題。')) return;
-                    for (const day in itineraryData) {
-                        if (Array.isArray(itineraryData[day])) {
-                            itineraryData[day].forEach(item => {
-                                item.images = [];
-                                item.image = null;
-                            });
-                        }
-                    }
-                    foodList.value.forEach(item => item.image = null);
-                    saveToDB();
-                    alert('清理完成！現在應該可以正常新增資料了。');
-                };
-
+                // --- 手動匯出與匯入功能 (保留) ---
                 const exportData = async () => {
                     const data = {
                         itineraryData: itineraryData,
                         shoppingList: shoppingList.value,
-                        expenses: expenses.value,
+                        // expenses: expenses.value, (移除)
                         hotels: hotels.value,
                         foodList: foodList.value,
                         packingList: packingList.value
@@ -581,30 +558,31 @@
                 const importData = (event) => {
                     const file = event.target.files[0];
                     if (!file) return;
+                    
                     const reader = new FileReader();
                     reader.onload = async (e) => {
                         try {
                             const data = JSON.parse(e.target.result);
                             if(confirm('警告：這將會覆蓋目前所有的資料，確定要匯入嗎？')) {
-                                localStorage.clear(); // 先清空
-                                if(data.itineraryData) storage.setItem('itineraryData', data.itineraryData);
-                                if(data.shoppingList) storage.setItem('shoppingList', data.shoppingList);
-                                if(data.expenses) storage.setItem('expenses', data.expenses);
-                                if(data.hotels) storage.setItem('hotels', data.hotels);
-                                if(data.foodList) storage.setItem('foodList', data.foodList);
-                                if(data.packingList) storage.setItem('packingList', data.packingList);
+                                if(data.itineraryData) await localforage.setItem('itineraryData', data.itineraryData);
+                                if(data.shoppingList) await localforage.setItem('shoppingList', data.shoppingList);
+                                // if(data.expenses) ... (移除)
+                                if(data.hotels) await localforage.setItem('hotels', data.hotels);
+                                if(data.foodList) await localforage.setItem('foodList', data.foodList);
+                                if(data.packingList) await localforage.setItem('packingList', data.packingList);
                                 alert('匯入成功！頁面將重新整理。');
                                 location.reload();
                             }
-                        } catch(err) { alert('匯入失敗：檔案格式錯誤'); }
+                        } catch(err) {
+                            alert('匯入失敗：檔案格式錯誤');
+                        }
                     };
                     reader.readAsText(file);
                 };
+                // --------------------------
 
                 const currentDayItinerary = computed(() => itineraryData[currentDayIndex.value] || []);
-                const totalExpenses = computed(() => (expenses.value || []).reduce((sum, item) => sum + Number(item.amount || 0), 0));
-                const cashExpenses = computed(() => (expenses.value || []).filter(i => i.method === '現金').reduce((sum, item) => sum + Number(item.amount || 0), 0));
-                const cardExpenses = computed(() => (expenses.value || []).filter(i => i.method === '信用卡').reduce((sum, item) => sum + Number(item.amount || 0), 0));
+                // 移除了 totalExpenses, cashExpenses, cardExpenses 的計算
                 
                 const osakaFoods = computed(() => foodList.value.filter(f => f.category === 'osaka'));
                 const kyotoFoods = computed(() => foodList.value.filter(f => f.category === 'kyoto'));
@@ -625,7 +603,7 @@
                                 canvas.width = width; canvas.height = height;
                                 const ctx = canvas.getContext('2d');
                                 ctx.drawImage(img, 0, 0, width, height);
-                                resolve(canvas.toDataURL('image/jpeg', 0.5)); // 降低品質以節省空間
+                                resolve(canvas.toDataURL('image/jpeg', 0.7));
                             };
                         };
                     });
@@ -646,19 +624,28 @@
                     }
                 };
                 
-                const handleShoppingImageUpload = async (e) => { return; }; 
+                const handleShoppingImageUpload = async (e) => {
+                    if (e.target.files[0]) {
+                        newShoppingItem.image = await compressImage(e.target.files[0]);
+                    }
+                };
 
-                const handleFoodImageUpload = async (e) => { return; }; // 為了穩定，暫時禁用美食圖片上傳
+                const handleFoodImageUpload = async (e) => {
+                    if (e.target.files[0]) {
+                        newFoodItem.image = await compressImage(e.target.files[0]);
+                    }
+                };
 
                 const handleFabClick = () => {
                     if (currentTab.value === 'itinerary') openAddModal();
                     else if (currentTab.value === 'shopping') showShoppingModal.value = true;
-                    else if (currentTab.value === 'expenses') openExpenseModal(); // 修改: 呼叫新的開啟函式
+                    // 移除了 expenses case
                     else if (currentTab.value === 'info') { 
                         hotelForm.name = ''; hotelForm.dates = ''; hotelForm.checkIn = '15:00'; hotelForm.checkOut = '11:00';
                         showHotelModal.value = true;
                     } else if (currentTab.value === 'food') { 
-                        openFoodModal(); // 修改: 呼叫新的開啟函式
+                        newFoodItem.name = ''; newFoodItem.note = ''; newFoodItem.image = null; newFoodItem.category = 'osaka';
+                        showFoodModal.value = true;
                     }
                 };
 
@@ -686,130 +673,52 @@
                     if (!itineraryData[currentDayIndex.value]) itineraryData[currentDayIndex.value] = [];
                     if (isEditing.value) itineraryData[currentDayIndex.value][editingIndex.value] = { ...editForm };
                     else itineraryData[currentDayIndex.value].push({ ...editForm });
-                    saveToDB(); 
+                    await saveToDB(); 
                     showEditModal.value = false;
                 };
 
                 const saveHotel = async () => {
                     if (hotelForm.name) {
                         hotels.value.push({ ...hotelForm, id: Date.now() });
-                        saveToDB();
+                        await saveToDB();
                         showHotelModal.value = false;
                     }
                 };
 
-                const openFoodModal = (item = null) => {
-                    if (item) {
-                        isEditingFood.value = true;
-                        Object.assign(newFoodItem, JSON.parse(JSON.stringify(item)));
-                    } else {
-                        isEditingFood.value = false;
-                        Object.assign(newFoodItem, { id: Date.now(), name: '', category: 'osaka', note: '', image: null });
-                    }
-                    showFoodModal.value = true;
-                };
-
                 const saveFoodItem = async () => {
                     if (newFoodItem.name) {
-                        if (isEditingFood.value) {
-                            const index = foodList.value.findIndex(f => f.id === newFoodItem.id);
-                            if (index !== -1) foodList.value[index] = { ...newFoodItem };
-                        } else {
-                            foodList.value.push({ ...newFoodItem, id: Date.now() });
-                        }
-                        saveToDB();
+                        foodList.value.push({ ...newFoodItem, id: Date.now() });
+                        await saveToDB();
                         showFoodModal.value = false;
                     }
                 };
 
-                const saveShoppingItem = async () => {
-                    const name = newShoppingItem.name.trim();
-                    if (name) {
-                        if (!Array.isArray(shoppingList.value)) shoppingList.value = [];
-                        
-                        shoppingList.value.unshift({ 
-                            id: Date.now(),
-                            name: name,
-                            checked: false
-                        });
-                        
-                        showShoppingModal.value = false;
-                        newShoppingItem.name = '';
-                        saveToDB(); 
-                    } else {
-                        alert('請輸入商品名稱');
-                    }
-                };
-
+                // 行前清單功能
                 const addPackingItem = async (type) => {
                     const text = packingInputs[type].trim();
                     if(text) {
                         if(!packingList.value[type]) packingList.value[type] = [];
                         packingList.value[type].push({ text, checked: false });
                         packingInputs[type] = '';
-                        saveToDB();
+                        await saveToDB();
                     }
                 };
                 const removePackingItem = async (type, index) => {
                     packingList.value[type].splice(index, 1);
-                    saveToDB();
+                    await saveToDB();
                 };
-                const savePacking = async () => { saveToDB(); };
+                const savePacking = async () => { await saveToDB(); };
 
-                const deleteHotel = async (idx) => { if(confirm('確定刪除此住宿？')) { hotels.value.splice(idx, 1); saveToDB(); } };
-                const deleteFoodItem = async (id) => { if(confirm('確定刪除此美食？')) { const idx = foodList.value.findIndex(f => f.id === id); if(idx !== -1) { foodList.value.splice(idx, 1); saveToDB(); } } };
+                const deleteHotel = async (idx) => { if(confirm('確定刪除此住宿？')) { hotels.value.splice(idx, 1); await saveToDB(); } };
+                const deleteFoodItem = async (id) => { if(confirm('確定刪除此美食？')) { const idx = foodList.value.findIndex(f => f.id === id); if(idx !== -1) { foodList.value.splice(idx, 1); await saveToDB(); } } };
 
-                const confirmDelete = async () => { if(confirm('刪除?')) { itineraryData[currentDayIndex.value].splice(editingIndex.value, 1); saveToDB(); showEditModal.value = false; } };
+                const confirmDelete = async () => { if(confirm('刪除?')) { itineraryData[currentDayIndex.value].splice(editingIndex.value, 1); await saveToDB(); showEditModal.value = false; } };
                 const removeImage = (idx) => editForm.images.splice(idx, 1);
                 
-                const deleteShoppingItem = async (idx) => { 
-                    shoppingList.value.splice(idx, 1); 
-                    saveToDB(); 
-                };
+                const saveShoppingItem = async () => { if(newShoppingItem.name) { shoppingList.value.push({...newShoppingItem}); await saveToDB(); showShoppingModal.value = false; newShoppingItem.name=''; newShoppingItem.image=null; }};
+                const deleteShoppingItem = async (idx) => { shoppingList.value.splice(idx, 1); await saveToDB(); };
                 
-                // --- 記帳功能修復 (新增/編輯 ID 機制) ---
-                const openExpenseModal = (item = null, index = -1) => {
-                    if (item) {
-                        isEditingExpense.value = true;
-                        editingExpenseIndex.value = index;
-                        const data = JSON.parse(JSON.stringify(item));
-                        if (!data.id) data.id = Date.now(); 
-                        Object.assign(newExpense, data);
-                    } else {
-                        isEditingExpense.value = false;
-                        editingExpenseIndex.value = -1;
-                        Object.assign(newExpense, { category: '飲食', name: '', amount: '', method: '現金', date: new Date().toISOString().split('T')[0] });
-                    }
-                    showExpenseModal.value = true;
-                };
-
-                const saveExpense = async () => { 
-                    if(newExpense.amount) {
-                        const entry = { ...newExpense };
-                        if (!entry.id) entry.id = Date.now(); 
-
-                        if (isEditingExpense.value && editingExpenseIndex.value !== -1) {
-                            expenses.value[editingExpenseIndex.value] = entry;
-                        } else {
-                            expenses.value.unshift(entry); 
-                        }
-                        showExpenseModal.value = false; 
-                        saveToDB(); 
-                    }
-                };
-                
-                const deleteExpense = async (idx) => { 
-                    if(confirm('刪除?')) { 
-                        // 因為列表是 v-for="(exp, index)", 所以這裡傳入的是 index
-                        if (typeof idx === 'number') {
-                             expenses.value.splice(idx, 1);
-                        } else {
-                             // 如果傳入的是 ID (某些舊邏輯)
-                             expenses.value = expenses.value.filter(e => e.id !== idx);
-                        }
-                        saveToDB(); 
-                    } 
-                };
+                // 移除了 saveExpense, deleteExpense
                 
                 const openMap = (l) => window.open(`https://www.google.com/maps/search/?api=1&query=?q=${encodeURIComponent(l)}`, '_blank');
                 const openImage = (u) => window.open(u, '_blank');
@@ -834,26 +743,32 @@
                                 const list = itineraryData[currentDayIndex.value];
                                 const item = list.splice(evt.oldIndex, 1)[0];
                                 list.splice(evt.newIndex, 0, item);
-                                saveToDB();
+                                await saveToDB();
                             }
                         });
                     }
                 };
                 
                 return {
-                    currentTab, currentDayIndex, days, hotels, currentDayItinerary, totalExpenses, cashExpenses, cardExpenses,
-                    showEditModal, showShoppingModal, showExpenseModal, showHotelModal, showFoodModal, 
-                    editForm, newShoppingItem, newExpense, hotelForm, newFoodItem,
-                    isEditing, isCompressing, isLoadingData, isEditingFood, isEditingExpense,
-                    getCategoryColor, getCategoryBg, getCategoryIcon, getTransportIcon, getExpenseIcon, getTabIcon,
+                    currentTab, currentDayIndex, days, hotels, currentDayItinerary, 
+                    // 移除了 totalExpenses, cashExpenses, cardExpenses
+                    showEditModal, showShoppingModal, showHotelModal, showFoodModal, 
+                    // 移除了 showExpenseModal
+                    editForm, newShoppingItem, hotelForm, newFoodItem,
+                    // 移除了 newExpense
+                    isEditing, isCompressing, isLoadingData,
+                    getCategoryColor, getCategoryBg, getCategoryIcon, getTransportIcon, getTabIcon,
+                    // 移除了 getExpenseIcon
                     handleFabClick, openAddModal, editItem, saveItinerary, confirmDelete, closeModal,
                     saveShoppingItem, deleteShoppingItem, handleShoppingImageUpload,
-                    saveExpense, deleteExpense, saveHotel, deleteHotel,
-                    saveFoodItem, deleteFoodItem, handleFoodImageUpload, osakaFoods, kyotoFoods, foodList, openFoodModal,
+                    // 移除了 saveExpense, deleteExpense
+                    saveHotel, deleteHotel,
+                    saveFoodItem, deleteFoodItem, handleFoodImageUpload, osakaFoods, kyotoFoods, foodList,
+                    // 行前清單
                     packingList, packingInputs, addPackingItem, removePackingItem, savePacking,
-                    openMap, openImage, handleItineraryImageUpload, removeImage, openExpenseModal,
+                    openMap, openImage, handleItineraryImageUpload, removeImage,
                     weather, calcInput, calcFormula, calcResultTwd, appendCalc, clearCalc, calculateFinal,
-                    exportData, importData, saveToDB, clearAllImages, hardReset 
+                    exportData, importData // 新增
                 };
             }
         }).mount('#app');
