@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (記帳修復版)</title>
+    <title>關西之旅 2026 (最終救援版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
@@ -33,7 +32,6 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .card-shadow { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); }
-        .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         .btn-active:active { transform: scale(0.95); }
         .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #e94e59; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -42,12 +40,9 @@
         
         .calc-btn { @apply h-12 rounded-lg bg-gray-50 text-gray-600 font-bold active:bg-gray-200 transition-colors shadow-sm border border-gray-100; }
         .calc-btn-op { @apply bg-orange-50 text-orange-500 border-orange-100 active:bg-orange-100; }
-        .calc-btn-eq { @apply bg-sakura-red text-white active:bg-sakura-dark shadow-md; }
-
         .sortable-ghost { opacity: 0.4; background-color: #fff0f5; border: 2px dashed #ffb7b2; }
         .sortable-fallback { opacity: 1 !important; background-color: white; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); transform: scale(1.02); border-radius: 1rem; cursor: grabbing; }
-        .handle { touch-action: none; cursor: grab; } .handle:active { cursor: grabbing; }
-
+        .handle { touch-action: none; cursor: grab; }
         .paper-list { background-image: linear-gradient(#f1f1f1 .1em, transparent .1em); background-size: 100% 3em; }
     </style>
 </head>
@@ -57,7 +52,7 @@
         
         <div v-if="isLoadingData" class="page-loading">
             <div class="loader w-10 h-10 border-4 mb-4 text-sakura-red"></div>
-            <p class="text-gray-500 font-bold">資料整理中...</p>
+            <p class="text-gray-500 font-bold">資料修復與載入中...</p>
         </div>
 
         <header class="relative h-[250px] md:h-[300px] bg-gray-200 overflow-hidden shrink-0 group">
@@ -136,7 +131,7 @@
                         </div>
                         <div class="p-4 space-y-3 paper-list">
                             <div v-for="(item, index) in packingList.lai" :key="index" class="flex items-center group">
-                                <input type="checkbox" v-model="item.checked" @change="savePacking" class="w-5 h-5 accent-gray-800 cursor-pointer rounded-full">
+                                <input type="checkbox" v-model="item.checked" @change="saveToDB" class="w-5 h-5 accent-gray-800 cursor-pointer rounded-full">
                                 <span :class="['ml-3 flex-1 text-gray-700 transition-all text-lg', item.checked ? 'line-through text-gray-400 opacity-50' : '']">{{ item.text }}</span>
                                 <button @click="removePackingItem('lai', index)" class="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2"><i class="fa-solid fa-xmark"></i></button>
                             </div>
@@ -154,7 +149,7 @@
                         </div>
                         <div class="p-4 space-y-3 paper-list">
                             <div v-for="(item, index) in packingList.ze" :key="index" class="flex items-center group">
-                                <input type="checkbox" v-model="item.checked" @change="savePacking" class="w-5 h-5 accent-khaki-main cursor-pointer rounded-full">
+                                <input type="checkbox" v-model="item.checked" @change="saveToDB" class="w-5 h-5 accent-khaki-main cursor-pointer rounded-full">
                                 <span :class="['ml-3 flex-1 text-gray-700 transition-all text-lg', item.checked ? 'line-through text-gray-400 opacity-50' : '']">{{ item.text }}</span>
                                 <button @click="removePackingItem('ze', index)" class="text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2"><i class="fa-solid fa-xmark"></i></button>
                             </div>
@@ -250,20 +245,20 @@
                         <button @click="calculateFinal()" class="w-full mt-2 h-12 rounded-lg bg-sakura-red text-white font-bold shadow-md active:bg-sakura-dark transition-colors text-lg">=</button>
                     </div>
 
-                    <div class="bg-red-50 rounded-2xl p-6 card-shadow border border-red-100">
-                        <h3 class="text-lg font-bold text-red-500 mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>資料救援區</h3>
-                        <p class="text-xs text-red-400 mb-4">如果發現無法新增資料，請嘗試清除圖片以釋放空間。</p>
-                        <button @click="clearAllImages" class="w-full bg-white border border-red-200 text-red-500 hover:bg-red-50 py-3 rounded-xl font-bold transition-colors flex items-center justify-center shadow-sm"><i class="fa-solid fa-eraser mr-2"></i>清除所有圖片 (保留文字)</button>
+                    <div class="bg-red-50 rounded-2xl p-6 card-shadow border border-red-100 mt-8">
+                        <h3 class="text-lg font-bold text-red-500 mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>工廠模式</h3>
+                        <p class="text-xs text-red-400 mb-4">如果發現功能異常或無法新增，請點擊下方按鈕重置 App (會清除所有資料)。</p>
+                        <button @click="hardReset" class="w-full bg-white border border-red-200 text-red-500 hover:bg-red-50 py-3 rounded-xl font-bold transition-colors flex items-center justify-center shadow-sm"><i class="fa-solid fa-bomb mr-2"></i>重置所有資料</button>
                     </div>
                 </div>
 
                 <div v-if="currentTab === 'expenses'" class="flex flex-col h-full p-4 md:p-8">
                     <div class="bg-white p-6 rounded-2xl card-shadow text-center mb-6 max-w-2xl mx-auto w-full"><p class="text-sm text-gray-400">總支出 (JPY)</p><div class="text-5xl font-bold text-sakura-red mt-3">¥ {{ totalExpenses.toLocaleString() }}</div><div class="mt-4 flex justify-center space-x-4 text-xs text-gray-500"><span>現金: {{ cashExpenses.toLocaleString() }}</span><span>信用卡: {{ cardExpenses.toLocaleString() }}</span></div></div>
                     
-                    <div v-show="!expenses || expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400"><i class="fa-solid fa-receipt text-6xl text-gray-200 mb-4"></i><p>尚無記帳紀錄</p></div>
+                    <div v-if="expenses.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400"><i class="fa-solid fa-receipt text-6xl text-gray-200 mb-4"></i><p>尚無記帳紀錄</p></div>
                     
-                    <div v-show="expenses && expenses.length > 0" class="space-y-3 pb-20 max-w-4xl mx-auto w-full">
-                        <div v-for="(exp, index) in expenses" :key="exp.id || index" class="bg-white p-4 rounded-xl flex justify-between items-center card-shadow relative group">
+                    <div v-else class="space-y-3 pb-20 max-w-4xl mx-auto w-full">
+                        <div v-for="(exp, index) in expenses" :key="index" class="bg-white p-4 rounded-xl flex justify-between items-center card-shadow relative group">
                             <div class="flex items-center flex-1">
                                 <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 mr-3"><i :class="getExpenseIcon(exp.category)"></i></div>
                                 <div><div class="font-bold text-gray-700">{{ exp.name }}</div><div class="text-xs text-gray-400">{{ exp.date }} · {{ exp.category }}</div></div>
@@ -271,7 +266,7 @@
                             <div class="flex items-center space-x-3">
                                 <div class="font-bold text-lg">¥ {{ exp.amount }}</div>
                                 <button @click="openExpenseModal(exp, index)" class="text-gray-300 hover:text-blue-500"><i class="fa-solid fa-pen"></i></button>
-                                <button @click="deleteExpense(exp.id)" class="text-gray-300 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                                <button @click="deleteExpense(index)" class="text-gray-300 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
                     </div>
@@ -371,7 +366,17 @@
 
         createApp({
             setup() {
-                localforage.config({ name: 'TripApp', storeName: 'trip_data' });
+                // 1. 更換為 LocalStorage (避免 IndexedDB 損壞問題)
+                const storage = {
+                    getItem: (key) => {
+                        const item = localStorage.getItem(key);
+                        return item ? JSON.parse(item) : null;
+                    },
+                    setItem: (key, value) => {
+                        localStorage.setItem(key, JSON.stringify(value));
+                    },
+                    clear: () => localStorage.clear()
+                };
 
                 const currentTab = ref('itinerary');
                 const currentDayIndex = ref(0);
@@ -393,12 +398,6 @@
                     { date: '19', week: 'Sat', fullDate: '2026-04-19', location: '關西機場', lat: 34.4320, lng: 135.2304 }
                 ];
                 
-                const defaultHotels = [
-                    { dates: '4/11-14', name: 'BRACKETS HOTEL', checkIn: '15:00', checkOut: '11:00' }, 
-                    { dates: '4/14-17', name: 'Ms Hotel', checkIn: '16:00', checkOut: '10:00' }, 
-                    { dates: '4/17-18', name: 'Hotel Meldia', checkIn: '15:00', checkOut: '11:00' }, 
-                    { dates: '4/18-19', name: 'EZ HOTEL', checkIn: '15:00', checkOut: '10:00' }
-                ];
                 const defaultItinerary = { 0: [{ id: 1, category: 'flight', name: 'TPE -> KIX', time: '18:00', note: '抵達關西', transportTime: 0, transportType: 'car', isFlight: true, images: [] }] };
 
                 const itineraryData = reactive({});
@@ -476,7 +475,6 @@
                             weather.desc = getWeatherDesc(weather.code);
                         }
                     } catch (e) {
-                        console.error('Weather error:', e);
                         weather.temp = 'N/A';
                     } finally {
                         weather.loading = false;
@@ -496,45 +494,36 @@
                     try {
                         isLoadingData.value = true;
                         
-                        const dbItinerary = await localforage.getItem('itineraryData');
-                        const dbShopping = await localforage.getItem('shoppingList');
-                        const dbExpenses = await localforage.getItem('expenses');
-                        const dbHotels = await localforage.getItem('hotels'); 
-                        const dbFood = await localforage.getItem('foodList'); 
-                        const dbPacking = await localforage.getItem('packingList'); 
+                        // 2. 嘗試從 localStorage 讀取 (如果讀不到會回傳 null)
+                        const dbItinerary = storage.getItem('itineraryData');
+                        const dbShopping = storage.getItem('shoppingList');
+                        const dbExpenses = storage.getItem('expenses');
+                        const dbHotels = storage.getItem('hotels'); 
+                        const dbFood = storage.getItem('foodList'); 
+                        const dbPacking = storage.getItem('packingList'); 
 
-                        if (Array.isArray(dbShopping)) {
-                            shoppingList.value = dbShopping.map(item => {
-                                const { image, ...rest } = item; 
-                                return rest;
-                            });
-                        } else {
-                            shoppingList.value = [];
-                        }
-
+                        // 3. 資料初始化與防呆
+                        shoppingList.value = Array.isArray(dbShopping) ? dbShopping : [];
                         expenses.value = Array.isArray(dbExpenses) ? dbExpenses : [];
-                        hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; 
+                        hotels.value = Array.isArray(dbHotels) ? dbHotels : []; 
                         foodList.value = Array.isArray(dbFood) ? dbFood : [];
                         packingList.value = dbPacking ? dbPacking : { lai: [], ze: [] }; 
                         
-                        if (!dbItinerary) {
-                             const oldIt = localStorage.getItem('itineraryData');
-                             if(oldIt) {
-                                 try { const parsed = JSON.parse(oldIt); Object.assign(itineraryData, parsed); } 
-                                 catch(e) { Object.assign(itineraryData, defaultItinerary); }
-                             } else { Object.assign(itineraryData, defaultItinerary); }
-                        } else {
+                        if (dbItinerary) {
                             Object.assign(itineraryData, dbItinerary);
+                        } else {
+                            Object.assign(itineraryData, defaultItinerary);
                         }
                         
                         updateWeather();
 
                     } catch (e) {
                         console.error('Data load error:', e);
+                        // 出錯時初始化為空
                         Object.assign(itineraryData, defaultItinerary);
                         shoppingList.value = [];
                         expenses.value = [];
-                        hotels.value = defaultHotels;
+                        hotels.value = [];
                         foodList.value = [];
                         packingList.value = { lai: [], ze: [] };
                     } finally {
@@ -545,18 +534,25 @@
 
                 onMounted(loadData);
 
-                const saveToDB = async () => {
+                const saveToDB = () => {
                     try {
-                        await localforage.setItem('itineraryData', JSON.parse(JSON.stringify(itineraryData)));
-                        await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value)));
-                        await localforage.setItem('expenses', JSON.parse(JSON.stringify(expenses.value)));
-                        await localforage.setItem('hotels', JSON.parse(JSON.stringify(hotels.value))); 
-                        await localforage.setItem('foodList', JSON.parse(JSON.stringify(foodList.value))); 
-                        await localforage.setItem('packingList', JSON.parse(JSON.stringify(packingList.value))); 
+                        storage.setItem('itineraryData', itineraryData);
+                        storage.setItem('shoppingList', shoppingList.value);
+                        storage.setItem('expenses', expenses.value);
+                        storage.setItem('hotels', hotels.value); 
+                        storage.setItem('foodList', foodList.value); 
+                        storage.setItem('packingList', packingList.value); 
                     } catch (e) {
-                        alert("儲存失敗: " + e.message); 
+                        alert("儲存空間已滿，請清除部分圖片"); 
                     }
                 };
+
+                const hardReset = () => {
+                    if(confirm('警告：這將會刪除所有資料並回復到初始狀態，確定嗎？')) {
+                        localStorage.clear();
+                        location.reload();
+                    }
+                }
 
                 const clearAllImages = async () => {
                     if(!confirm('確定要清除所有行程與美食的圖片嗎？這可以解決無法新增資料的問題。')) return;
@@ -569,8 +565,8 @@
                         }
                     }
                     foodList.value.forEach(item => item.image = null);
-                    await saveToDB();
-                    alert('清理完成！現在應該可以正常新增資料了。');
+                    saveToDB();
+                    alert('清理完成！');
                 };
 
                 const exportData = async () => {
@@ -600,12 +596,13 @@
                         try {
                             const data = JSON.parse(e.target.result);
                             if(confirm('警告：這將會覆蓋目前所有的資料，確定要匯入嗎？')) {
-                                if(data.itineraryData) await localforage.setItem('itineraryData', data.itineraryData);
-                                if(data.shoppingList) await localforage.setItem('shoppingList', data.shoppingList);
-                                if(data.expenses) await localforage.setItem('expenses', data.expenses);
-                                if(data.hotels) await localforage.setItem('hotels', data.hotels);
-                                if(data.foodList) await localforage.setItem('foodList', data.foodList);
-                                if(data.packingList) await localforage.setItem('packingList', data.packingList);
+                                localStorage.clear(); // 先清空
+                                if(data.itineraryData) storage.setItem('itineraryData', data.itineraryData);
+                                if(data.shoppingList) storage.setItem('shoppingList', data.shoppingList);
+                                if(data.expenses) storage.setItem('expenses', data.expenses);
+                                if(data.hotels) storage.setItem('hotels', data.hotels);
+                                if(data.foodList) storage.setItem('foodList', data.foodList);
+                                if(data.packingList) storage.setItem('packingList', data.packingList);
                                 alert('匯入成功！頁面將重新整理。');
                                 location.reload();
                             }
@@ -638,7 +635,7 @@
                                 canvas.width = width; canvas.height = height;
                                 const ctx = canvas.getContext('2d');
                                 ctx.drawImage(img, 0, 0, width, height);
-                                resolve(canvas.toDataURL('image/jpeg', 0.7));
+                                resolve(canvas.toDataURL('image/jpeg', 0.5)); // 降低品質以節省空間
                             };
                         };
                     });
@@ -661,11 +658,7 @@
                 
                 const handleShoppingImageUpload = async (e) => { return; }; 
 
-                const handleFoodImageUpload = async (e) => {
-                    if (e.target.files[0]) {
-                        newFoodItem.image = await compressImage(e.target.files[0]);
-                    }
-                };
+                const handleFoodImageUpload = async (e) => { return; }; // 為了穩定，暫時禁用美食圖片上傳
 
                 const handleFabClick = () => {
                     if (currentTab.value === 'itinerary') openAddModal();
@@ -703,14 +696,14 @@
                     if (!itineraryData[currentDayIndex.value]) itineraryData[currentDayIndex.value] = [];
                     if (isEditing.value) itineraryData[currentDayIndex.value][editingIndex.value] = { ...editForm };
                     else itineraryData[currentDayIndex.value].push({ ...editForm });
-                    await saveToDB(); 
+                    saveToDB(); 
                     showEditModal.value = false;
                 };
 
                 const saveHotel = async () => {
                     if (hotelForm.name) {
                         hotels.value.push({ ...hotelForm, id: Date.now() });
-                        await saveToDB();
+                        saveToDB();
                         showHotelModal.value = false;
                     }
                 };
@@ -734,12 +727,11 @@
                         } else {
                             foodList.value.push({ ...newFoodItem, id: Date.now() });
                         }
-                        await saveToDB();
+                        saveToDB();
                         showFoodModal.value = false;
                     }
                 };
 
-                // --- 購物清單 (修復版: 強制先更新畫面) ---
                 const saveShoppingItem = async () => {
                     const name = newShoppingItem.name.trim();
                     if (name) {
@@ -753,8 +745,7 @@
                         
                         showShoppingModal.value = false;
                         newShoppingItem.name = '';
-
-                        try { await saveToDB(); } catch (e) { console.error('背景儲存失敗', e); }
+                        saveToDB(); 
                     } else {
                         alert('請輸入商品名稱');
                     }
@@ -766,32 +757,30 @@
                         if(!packingList.value[type]) packingList.value[type] = [];
                         packingList.value[type].push({ text, checked: false });
                         packingInputs[type] = '';
-                        await saveToDB();
+                        saveToDB();
                     }
                 };
                 const removePackingItem = async (type, index) => {
                     packingList.value[type].splice(index, 1);
-                    await saveToDB();
+                    saveToDB();
                 };
-                const savePacking = async () => { await saveToDB(); };
+                const savePacking = async () => { saveToDB(); };
 
-                const deleteHotel = async (idx) => { if(confirm('確定刪除此住宿？')) { hotels.value.splice(idx, 1); await saveToDB(); } };
-                const deleteFoodItem = async (id) => { if(confirm('確定刪除此美食？')) { const idx = foodList.value.findIndex(f => f.id === id); if(idx !== -1) { foodList.value.splice(idx, 1); await saveToDB(); } } };
+                const deleteHotel = async (idx) => { if(confirm('確定刪除此住宿？')) { hotels.value.splice(idx, 1); saveToDB(); } };
+                const deleteFoodItem = async (id) => { if(confirm('確定刪除此美食？')) { const idx = foodList.value.findIndex(f => f.id === id); if(idx !== -1) { foodList.value.splice(idx, 1); saveToDB(); } } };
 
-                const confirmDelete = async () => { if(confirm('刪除?')) { itineraryData[currentDayIndex.value].splice(editingIndex.value, 1); await saveToDB(); showEditModal.value = false; } };
+                const confirmDelete = async () => { if(confirm('刪除?')) { itineraryData[currentDayIndex.value].splice(editingIndex.value, 1); saveToDB(); showEditModal.value = false; } };
                 const removeImage = (idx) => editForm.images.splice(idx, 1);
                 
                 const deleteShoppingItem = async (idx) => { 
                     shoppingList.value.splice(idx, 1); 
-                    await saveToDB(); 
+                    saveToDB(); 
                 };
                 
-                // --- 記帳功能修復 (新增/編輯 ID 機制) ---
                 const openExpenseModal = (item = null, index = -1) => {
                     if (item) {
                         isEditingExpense.value = true;
                         editingExpenseIndex.value = index;
-                        // 確保有 ID，如果是舊資料沒有 ID 就補上
                         const data = JSON.parse(JSON.stringify(item));
                         if (!data.id) data.id = Date.now(); 
                         Object.assign(newExpense, data);
@@ -806,34 +795,28 @@
                 const saveExpense = async () => { 
                     if(newExpense.amount) {
                         const entry = { ...newExpense };
-                        if (!entry.id) entry.id = Date.now(); // 確保新項目有 ID
+                        if (!entry.id) entry.id = Date.now(); 
 
                         if (isEditingExpense.value && editingExpenseIndex.value !== -1) {
                             expenses.value[editingExpenseIndex.value] = entry;
                         } else {
                             expenses.value.unshift(entry); 
                         }
-                        
-                        // 先關閉視窗，再背景存檔
                         showExpenseModal.value = false; 
-                        
-                        try {
-                            await saveToDB(); 
-                        } catch(e) {
-                            console.error("儲存失敗", e);
-                        }
+                        saveToDB(); 
                     }
                 };
                 
-                const deleteExpense = async (id) => { 
+                const deleteExpense = async (idx) => { 
                     if(confirm('刪除?')) { 
-                        // 改用 ID 過濾刪除，比較準確
-                        expenses.value = expenses.value.filter(e => e.id !== id);
-                        // 如果舊資料沒有 ID，回退到用 index 刪除 (兼容性)
-                        if (id === undefined) { 
-                             // 這裡簡化處理，重新整理後 ID 會補上，所以直接存檔即可
+                        // 因為列表是 v-for="(exp, index)", 所以這裡傳入的是 index
+                        if (typeof idx === 'number') {
+                             expenses.value.splice(idx, 1);
+                        } else {
+                             // 如果傳入的是 ID (某些舊邏輯)
+                             expenses.value = expenses.value.filter(e => e.id !== idx);
                         }
-                        await saveToDB(); 
+                        saveToDB(); 
                     } 
                 };
                 
@@ -860,7 +843,7 @@
                                 const list = itineraryData[currentDayIndex.value];
                                 const item = list.splice(evt.oldIndex, 1)[0];
                                 list.splice(evt.newIndex, 0, item);
-                                await saveToDB();
+                                saveToDB();
                             }
                         });
                     }
@@ -879,7 +862,7 @@
                     packingList, packingInputs, addPackingItem, removePackingItem, savePacking,
                     openMap, openImage, handleItineraryImageUpload, removeImage, openExpenseModal,
                     weather, calcInput, calcFormula, calcResultTwd, appendCalc, clearCalc, calculateFinal,
-                    exportData, importData, saveToDB, clearAllImages 
+                    exportData, importData, saveToDB, clearAllImages, hardReset 
                 };
             }
         }).mount('#app');
