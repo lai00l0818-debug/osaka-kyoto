@@ -264,11 +264,21 @@
                 </div>
 
                 <div v-if="currentTab === 'shopping'" class="p-4 md:p-8">
-                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh] bg-white/50 backdrop-blur-sm rounded-3xl mx-4"><i class="fa-solid fa-basket-shopping text-6xl text-gray-300 mb-4"></i><p class="font-bold text-gray-500">尚無購物清單</p><p class="text-xs mt-2 text-gray-400">點擊右下角按鈕新增</p></div>
-                     <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        <div v-for="(item, index) in shoppingList" :key="index" class="bg-white rounded-xl card-shadow overflow-hidden group">
-                            <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden"><img v-if="item.image" :src="item.image" class="w-full h-full object-cover"><i v-else class="fa-solid fa-camera text-gray-300 text-3xl"></i></div>
-                            <div class="p-4"><h4 class="font-bold text-gray-700 truncate">{{ item.name }}</h4><div class="flex justify-between mt-2"><label class="flex items-center cursor-pointer"><input type="checkbox" v-model="item.checked" class="w-5 h-5 accent-sakura-red"><span class="text-xs ml-2 text-gray-400" v-if="item.checked">已購買</span></label><button @click="deleteShoppingItem(index)"><i class="fa-solid fa-trash-can text-gray-300 hover:text-red-400"></i></button></div></div>
+                     <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center bg-white/60 backdrop-blur-sm inline-block px-4 py-2 rounded-full mx-auto shadow-sm"><i class="fa-solid fa-bag-shopping text-sakura-red mr-3"></i>要買的東東</h2></div>
+                     
+                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh] bg-white/50 backdrop-blur-sm rounded-3xl mx-4">
+                        <i class="fa-solid fa-basket-shopping text-6xl text-gray-300 mb-4"></i>
+                        <p class="font-bold text-gray-500">尚無購買清單</p>
+                        <p class="text-xs mt-2 text-gray-400">點擊右下角按鈕新增</p>
+                     </div>
+                     
+                     <div v-else class="grid grid-cols-2 gap-4">
+                        <div v-for="(item, index) in shoppingList" :key="index" class="bg-white rounded-xl card-shadow p-4 flex items-center justify-between group active:scale-[0.98] transition-transform">
+                            <div class="flex items-center flex-1 overflow-hidden">
+                                <input type="checkbox" v-model="item.checked" @change="saveToDB" class="w-6 h-6 accent-sakura-red flex-shrink-0 cursor-pointer rounded-full">
+                                <span :class="['ml-3 font-bold text-gray-700 truncate text-lg', item.checked ? 'line-through text-gray-400 opacity-60' : '']">{{ item.name }}</span>
+                            </div>
+                            <button @click="deleteShoppingItem(index)" class="ml-2 text-gray-300 hover:text-red-400 p-2"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                      </div>
                 </div>
@@ -310,14 +320,9 @@
 
         <div v-if="showShoppingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showShoppingModal = false">
             <div class="bg-white w-full max-w-md rounded-2xl p-8 m-4 shadow-2xl">
-                <h3 class="font-bold text-xl mb-6 text-center">新增購物</h3>
-                <input type="text" v-model="newShoppingItem.name" class="input-field mb-6" placeholder="商品名稱">
-                <label class="block w-full h-40 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-sakura-red bg-gray-50">
-                    <img v-if="newShoppingItem.image" :src="newShoppingItem.image" class="h-full object-contain">
-                    <div v-else class="text-center text-gray-400"><i class="fa-solid fa-camera text-2xl mb-2"></i><br>上傳圖片</div>
-                    <input type="file" @change="handleShoppingImageUpload" class="hidden" accept="image/*">
-                </label>
-                <button @click="saveShoppingItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">加入</button>
+                <h3 class="font-bold text-xl mb-6 text-center">新增 要買的東東</h3>
+                <input type="text" v-model="newShoppingItem.name" class="input-field mb-6" placeholder="輸入商品名稱...">
+                <button @click="saveShoppingItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-2 hover:bg-sakura-dark">加入</button>
             </div>
         </div>
         
@@ -362,7 +367,6 @@
 
                 const currentTab = ref('itinerary');
                 const currentDayIndex = ref(0);
-                // 移除了 showExpenseModal
                 const showEditModal = ref(false), showShoppingModal = ref(false), showHotelModal = ref(false), showFoodModal = ref(false);
                 const isEditing = ref(false), editingIndex = ref(-1), isCompressing = ref(false), isLoadingData = ref(true);
 
@@ -388,7 +392,6 @@
 
                 const itineraryData = reactive({});
                 const shoppingList = ref([]);
-                // 移除了 expenses 變數
                 const hotels = ref([]); 
                 const foodList = ref([]); 
                 const packingList = ref({ lai: [], ze: [] }); 
@@ -397,8 +400,7 @@
                 const weather = reactive({ temp: '--', code: 0, desc: '載入中...', iconClass: 'fa-solid fa-cloud', loading: false });
 
                 const editForm = reactive({ id: null, category: 'spot', name: '', time: '', note: '', ticket: '', transportTime: 30, transportType: 'train', images: [], image: null });
-                const newShoppingItem = reactive({ name: '', image: null, checked: false });
-                // 移除了 newExpense 變數
+                const newShoppingItem = reactive({ name: '', checked: false });
                 const hotelForm = reactive({ name: '', dates: '', checkIn: '15:00', checkOut: '11:00' });
                 const newFoodItem = reactive({ name: '', category: 'osaka', note: '', image: null });
 
@@ -430,8 +432,7 @@
                 const getCategoryBg = (cat) => ({ spot: 'bg-pink-400', food: 'bg-orange-400', shopping: 'bg-purple-400', flight: 'bg-blue-400', hotel: 'bg-indigo-400' }[cat] || 'bg-gray-400');
                 const getCategoryIcon = (cat) => ({ spot: 'fa-solid fa-camera', food: 'fa-solid fa-utensils', shopping: 'fa-solid fa-bag-shopping', flight: 'fa-solid fa-plane', hotel: 'fa-solid fa-bed' }[cat] || 'fa-solid fa-star');
                 const getTransportIcon = (t) => t === 'walk' ? 'fa-solid fa-person-walking' : t === 'car' ? 'fa-solid fa-car' : 'fa-solid fa-train-subway';
-                // 移除了 getExpenseIcon
-                const getTabIcon = (t) => ({ 'itinerary': 'fa-solid fa-map-location-dot', 'info': 'fa-solid fa-circle-info', 'shopping': 'fa-solid fa-basket-shopping', 'expenses': 'fa-solid fa-coins', 'food': 'fa-solid fa-utensils', 'packing': 'fa-solid fa-suitcase' }[t]);
+                const getTabIcon = (t) => ({ 'itinerary': 'fa-solid fa-map-location-dot', 'info': 'fa-solid fa-circle-info', 'shopping': 'fa-solid fa-bag-shopping', 'food': 'fa-solid fa-utensils', 'packing': 'fa-solid fa-suitcase' }[t]);
 
                 const getWeatherIconClass = (code) => {
                     if (code === 0) return 'fa-solid fa-sun text-yellow-400';
@@ -483,13 +484,11 @@
                         
                         const dbItinerary = await localforage.getItem('itineraryData');
                         const dbShopping = await localforage.getItem('shoppingList');
-                        // 移除了 expenses 的讀取
                         const dbHotels = await localforage.getItem('hotels'); 
                         const dbFood = await localforage.getItem('foodList'); 
                         const dbPacking = await localforage.getItem('packingList'); 
 
                         shoppingList.value = Array.isArray(dbShopping) ? dbShopping : [];
-                        // expenses.value = ... (移除)
                         hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; 
                         foodList.value = Array.isArray(dbFood) ? dbFood : [];
                         packingList.value = dbPacking ? dbPacking : { lai: [], ze: [] }; 
@@ -510,7 +509,6 @@
                         console.error('Data load error:', e);
                         Object.assign(itineraryData, defaultItinerary);
                         shoppingList.value = [];
-                        // expenses.value = []; (移除)
                         hotels.value = defaultHotels;
                         foodList.value = [];
                         packingList.value = { lai: [], ze: [] };
@@ -526,7 +524,6 @@
                     try {
                         await localforage.setItem('itineraryData', JSON.parse(JSON.stringify(itineraryData)));
                         await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value)));
-                        // 移除了 expenses 的儲存
                         await localforage.setItem('hotels', JSON.parse(JSON.stringify(hotels.value))); 
                         await localforage.setItem('foodList', JSON.parse(JSON.stringify(foodList.value))); 
                         await localforage.setItem('packingList', JSON.parse(JSON.stringify(packingList.value))); 
@@ -535,12 +532,11 @@
                     }
                 };
 
-                // --- 手動匯出與匯入功能 (保留) ---
+                // --- 手動匯出與匯入功能 ---
                 const exportData = async () => {
                     const data = {
                         itineraryData: itineraryData,
                         shoppingList: shoppingList.value,
-                        // expenses: expenses.value, (移除)
                         hotels: hotels.value,
                         foodList: foodList.value,
                         packingList: packingList.value
@@ -566,7 +562,6 @@
                             if(confirm('警告：這將會覆蓋目前所有的資料，確定要匯入嗎？')) {
                                 if(data.itineraryData) await localforage.setItem('itineraryData', data.itineraryData);
                                 if(data.shoppingList) await localforage.setItem('shoppingList', data.shoppingList);
-                                // if(data.expenses) ... (移除)
                                 if(data.hotels) await localforage.setItem('hotels', data.hotels);
                                 if(data.foodList) await localforage.setItem('foodList', data.foodList);
                                 if(data.packingList) await localforage.setItem('packingList', data.packingList);
@@ -582,7 +577,6 @@
                 // --------------------------
 
                 const currentDayItinerary = computed(() => itineraryData[currentDayIndex.value] || []);
-                // 移除了 totalExpenses, cashExpenses, cardExpenses 的計算
                 
                 const osakaFoods = computed(() => foodList.value.filter(f => f.category === 'osaka'));
                 const kyotoFoods = computed(() => foodList.value.filter(f => f.category === 'kyoto'));
@@ -624,12 +618,6 @@
                     }
                 };
                 
-                const handleShoppingImageUpload = async (e) => {
-                    if (e.target.files[0]) {
-                        newShoppingItem.image = await compressImage(e.target.files[0]);
-                    }
-                };
-
                 const handleFoodImageUpload = async (e) => {
                     if (e.target.files[0]) {
                         newFoodItem.image = await compressImage(e.target.files[0]);
@@ -639,7 +627,6 @@
                 const handleFabClick = () => {
                     if (currentTab.value === 'itinerary') openAddModal();
                     else if (currentTab.value === 'shopping') showShoppingModal.value = true;
-                    // 移除了 expenses case
                     else if (currentTab.value === 'info') { 
                         hotelForm.name = ''; hotelForm.dates = ''; hotelForm.checkIn = '15:00'; hotelForm.checkOut = '11:00';
                         showHotelModal.value = true;
@@ -693,7 +680,6 @@
                     }
                 };
 
-                // 行前清單功能
                 const addPackingItem = async (type) => {
                     const text = packingInputs[type].trim();
                     if(text) {
@@ -715,10 +701,16 @@
                 const confirmDelete = async () => { if(confirm('刪除?')) { itineraryData[currentDayIndex.value].splice(editingIndex.value, 1); await saveToDB(); showEditModal.value = false; } };
                 const removeImage = (idx) => editForm.images.splice(idx, 1);
                 
-                const saveShoppingItem = async () => { if(newShoppingItem.name) { shoppingList.value.push({...newShoppingItem}); await saveToDB(); showShoppingModal.value = false; newShoppingItem.name=''; newShoppingItem.image=null; }};
+                // 修改: 純文字儲存
+                const saveShoppingItem = async () => { 
+                    if(newShoppingItem.name) { 
+                        shoppingList.value.push({...newShoppingItem}); 
+                        await saveToDB(); 
+                        showShoppingModal.value = false; 
+                        newShoppingItem.name=''; 
+                    }
+                };
                 const deleteShoppingItem = async (idx) => { shoppingList.value.splice(idx, 1); await saveToDB(); };
-                
-                // 移除了 saveExpense, deleteExpense
                 
                 const openMap = (l) => window.open(`https://www.google.com/maps/search/?api=1&query=?q=${encodeURIComponent(l)}`, '_blank');
                 const openImage = (u) => window.open(u, '_blank');
@@ -750,25 +742,20 @@
                 };
                 
                 return {
-                    currentTab, currentDayIndex, days, hotels, currentDayItinerary, 
-                    // 移除了 totalExpenses, cashExpenses, cardExpenses
+                    currentTab, currentDayIndex, days, hotels, currentDayItinerary,
                     showEditModal, showShoppingModal, showHotelModal, showFoodModal, 
-                    // 移除了 showExpenseModal
                     editForm, newShoppingItem, hotelForm, newFoodItem,
-                    // 移除了 newExpense
                     isEditing, isCompressing, isLoadingData,
                     getCategoryColor, getCategoryBg, getCategoryIcon, getTransportIcon, getTabIcon,
-                    // 移除了 getExpenseIcon
                     handleFabClick, openAddModal, editItem, saveItinerary, confirmDelete, closeModal,
-                    saveShoppingItem, deleteShoppingItem, handleShoppingImageUpload,
-                    // 移除了 saveExpense, deleteExpense
+                    saveShoppingItem, deleteShoppingItem, 
                     saveHotel, deleteHotel,
                     saveFoodItem, deleteFoodItem, handleFoodImageUpload, osakaFoods, kyotoFoods, foodList,
-                    // 行前清單
                     packingList, packingInputs, addPackingItem, removePackingItem, savePacking,
+                    saveToDB, // 新增這行，讓 HTML 可以呼叫 saveToDB
                     openMap, openImage, handleItineraryImageUpload, removeImage,
                     weather, calcInput, calcFormula, calcResultTwd, appendCalc, clearCalc, calculateFinal,
-                    exportData, importData // 新增
+                    exportData, importData
                 };
             }
         }).mount('#app');
