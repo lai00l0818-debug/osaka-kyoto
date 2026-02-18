@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>關西之旅 2026 (購物優化版)</title>
+    <title>關西之旅 2026 (購物修復版)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -57,7 +57,7 @@
         
         <div v-if="isLoadingData" class="page-loading">
             <div class="loader w-10 h-10 border-4 mb-4 text-sakura-red"></div>
-            <p class="text-gray-500 font-bold">載入資料中...</p>
+            <p class="text-gray-500 font-bold">資料整理中...</p>
         </div>
 
         <header class="relative h-[250px] md:h-[300px] bg-gray-200 overflow-hidden shrink-0 group">
@@ -220,7 +220,6 @@
                             <button @click="deleteShoppingItem(index)" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 p-1 z-10">
                                 <i class="fa-solid fa-trash-can text-sm"></i>
                             </button>
-                            
                             <div class="pr-6">
                                 <div class="flex items-start mb-2">
                                     <input type="checkbox" v-model="item.checked" @change="saveToDB" class="w-5 h-5 accent-sakura-red cursor-pointer mt-1 shrink-0">
@@ -329,7 +328,7 @@
                 <div class="space-y-4">
                     <div>
                         <label class="label-text">商品名稱</label>
-                        <input type="text" v-model="newShoppingItem.name" class="input-field" placeholder="請輸入商品名稱">
+                        <input type="text" v-model="newShoppingItem.name" @keyup.enter="saveShoppingItem" class="input-field" placeholder="請輸入商品名稱" autofocus>
                     </div>
                 </div>
                 <button @click="saveShoppingItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-6 hover:bg-sakura-dark">加入清單</button>
@@ -516,7 +515,16 @@
                         const dbFood = await localforage.getItem('foodList'); 
                         const dbPacking = await localforage.getItem('packingList'); 
 
-                        shoppingList.value = Array.isArray(dbShopping) ? dbShopping : [];
+                        // 自動清理購物清單中的圖片資料 (瘦身)
+                        if (Array.isArray(dbShopping)) {
+                            shoppingList.value = dbShopping.map(item => {
+                                const { image, ...rest } = item; // 移除圖片
+                                return rest;
+                            });
+                        } else {
+                            shoppingList.value = [];
+                        }
+
                         expenses.value = Array.isArray(dbExpenses) ? dbExpenses : [];
                         hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; 
                         foodList.value = Array.isArray(dbFood) ? dbFood : [];
@@ -559,7 +567,7 @@
                         await localforage.setItem('foodList', JSON.parse(JSON.stringify(foodList.value))); 
                         await localforage.setItem('packingList', JSON.parse(JSON.stringify(packingList.value))); 
                     } catch (e) {
-                        alert("儲存失敗: " + e.message);
+                        alert("儲存失敗: " + e.message); // 增加錯誤提示
                     }
                 };
 
@@ -653,8 +661,7 @@
                     }
                 };
                 
-                // 購物圖片上傳保留函式結構但移除功能
-                const handleShoppingImageUpload = async (e) => { return; };
+                const handleShoppingImageUpload = async (e) => { return; }; // 禁用購物圖片上傳
 
                 const handleFoodImageUpload = async (e) => {
                     if (e.target.files[0]) {
@@ -719,17 +726,25 @@
                     }
                 };
 
-                // --- 修復購物清單新增功能 ---
+                // --- 強化版購物清單儲存 ---
                 const saveShoppingItem = async () => {
-                    if (newShoppingItem.name) {
+                    const name = newShoppingItem.name.trim();
+                    if (name) {
+                        if (!Array.isArray(shoppingList.value)) shoppingList.value = [];
                         shoppingList.value.push({
                             id: Date.now(),
-                            name: newShoppingItem.name,
+                            name: name,
                             checked: false
                         });
-                        await saveToDB();
-                        showShoppingModal.value = false;
-                        newShoppingItem.name = '';
+                        try {
+                            await saveToDB();
+                            showShoppingModal.value = false;
+                            newShoppingItem.name = '';
+                        } catch (e) {
+                            alert('新增失敗，請檢查儲存空間');
+                        }
+                    } else {
+                        alert('請輸入商品名稱');
                     }
                 };
 
@@ -801,7 +816,7 @@
                     packingList, packingInputs, addPackingItem, removePackingItem, savePacking,
                     openMap, openImage, handleItineraryImageUpload, removeImage,
                     weather, calcInput, calcFormula, calcResultTwd, appendCalc, clearCalc, calculateFinal,
-                    exportData, importData 
+                    exportData, importData, saveToDB // Expose saveToDB for checkbox
                 };
             }
         }).mount('#app');
@@ -809,5 +824,3 @@
     <style>.label-text { @apply block text-xs font-bold text-gray-400 mb-1 ml-1; } .input-field { @apply w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-sakura-red focus:bg-white transition-colors; } .slide-up-animation { animation: slideUp 0.3s ease-out; } @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
 </body>
 </html>
-
-
