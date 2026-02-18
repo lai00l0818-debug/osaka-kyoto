@@ -76,7 +76,7 @@
                 <p class="text-sm md:text-base font-medium opacity-90 mt-2 text-shadow"><i class="fa-regular fa-calendar mr-2"></i>2026.04.11 - 04.19</p>
             </div>
             <div class="absolute bottom-6 right-6 md:right-10 flex space-x-3 z-20 overflow-x-auto no-scrollbar max-w-[60vw] pr-2">
-                <button v-for="tab in ['packing', 'itinerary', 'info', 'food', 'shopping']" :key="tab" @click="currentTab = tab" 
+                <button v-for="tab in ['packing', 'itinerary', 'info', 'food']" :key="tab" @click="currentTab = tab" 
                     :class="['w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm', currentTab === tab ? 'bg-sakura-red text-white scale-110' : 'bg-white/90 text-gray-500 hover:bg-white']">
                     <i :class="getTabIcon(tab)" class="text-base"></i>
                 </button>
@@ -262,30 +262,10 @@
                         </div>
                     </div>
                 </div>
-
-                <div v-if="currentTab === 'shopping'" class="p-4 md:p-8">
-                     <div class="text-center mb-6"><h2 class="text-2xl font-bold text-gray-700 flex items-center justify-center bg-white/60 backdrop-blur-sm inline-block px-4 py-2 rounded-full mx-auto shadow-sm"><i class="fa-solid fa-bag-shopping text-sakura-red mr-3"></i>要買的東東</h2></div>
-                     
-                     <div v-if="!shoppingList || shoppingList.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 h-[60vh] bg-white/50 backdrop-blur-sm rounded-3xl mx-4">
-                        <i class="fa-solid fa-basket-shopping text-6xl text-gray-300 mb-4"></i>
-                        <p class="font-bold text-gray-500">尚無購買清單</p>
-                        <p class="text-xs mt-2 text-gray-400">點擊右下角按鈕新增</p>
-                     </div>
-                     
-                     <div v-else class="grid grid-cols-2 gap-4">
-                        <div v-for="(item, index) in shoppingList" :key="index" class="bg-white rounded-xl card-shadow p-4 flex items-center justify-between group active:scale-[0.98] transition-transform">
-                            <div class="flex items-center flex-1 overflow-hidden">
-                                <input type="checkbox" v-model="item.checked" @change="saveToDB" class="w-6 h-6 accent-sakura-red flex-shrink-0 cursor-pointer rounded-full">
-                                <span :class="['ml-3 font-bold text-gray-700 truncate text-lg', item.checked ? 'line-through text-gray-400 opacity-60' : '']">{{ item.name }}</span>
-                            </div>
-                            <button @click="deleteShoppingItem(index)" class="ml-2 text-gray-300 hover:text-red-400 p-2"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                     </div>
-                </div>
             
             </div> </main>
 
-        <button v-if="['itinerary','shopping','info','food'].includes(currentTab)" @click="handleFabClick" class="fixed bottom-24 right-6 w-16 h-16 bg-sakura-red text-white rounded-full shadow-xl flex items-center justify-center text-3xl btn-active z-40 hover:scale-110 transition-transform"><i class="fa-solid fa-plus"></i></button>
+        <button v-if="['itinerary','info','food'].includes(currentTab)" @click="handleFabClick" class="fixed bottom-24 right-6 w-16 h-16 bg-sakura-red text-white rounded-full shadow-xl flex items-center justify-center text-3xl btn-active z-40 hover:scale-110 transition-transform"><i class="fa-solid fa-plus"></i></button>
 
         <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" @click.self="closeModal">
             <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 h-[90vh] sm:h-auto flex flex-col shadow-2xl slide-up-animation">
@@ -315,14 +295,6 @@
                     <button v-if="isEditing" @click="confirmDelete" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 py-3.5 rounded-xl font-bold transition-colors">刪除</button>
                     <button @click="saveItinerary" :disabled="isCompressing" class="flex-[2] bg-sakura-red hover:bg-sakura-dark text-white py-3.5 rounded-xl font-bold shadow-lg shadow-red-100 transition-colors disabled:bg-gray-400">{{ isCompressing ? '處理中...' : '儲存' }}</button>
                 </div>
-            </div>
-        </div>
-
-        <div v-if="showShoppingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showShoppingModal = false">
-            <div class="bg-white w-full max-w-md rounded-2xl p-8 m-4 shadow-2xl">
-                <h3 class="font-bold text-xl mb-6 text-center">新增 要買的東東</h3>
-                <input type="text" v-model="newShoppingItem.name" class="input-field mb-6" placeholder="輸入商品名稱...">
-                <button @click="saveShoppingItem" class="w-full bg-sakura-red text-white py-3.5 rounded-xl font-bold mt-2 hover:bg-sakura-dark">加入</button>
             </div>
         </div>
         
@@ -367,7 +339,7 @@
 
                 const currentTab = ref('itinerary');
                 const currentDayIndex = ref(0);
-                const showEditModal = ref(false), showShoppingModal = ref(false), showHotelModal = ref(false), showFoodModal = ref(false);
+                const showEditModal = ref(false), showHotelModal = ref(false), showFoodModal = ref(false);
                 const isEditing = ref(false), editingIndex = ref(-1), isCompressing = ref(false), isLoadingData = ref(true);
 
                 const days = [
@@ -391,7 +363,6 @@
                 const defaultItinerary = { 0: [{ id: 1, category: 'flight', name: 'TPE -> KIX', time: '18:00', note: '抵達關西', transportTime: 0, transportType: 'car', isFlight: true, images: [] }] };
 
                 const itineraryData = reactive({});
-                const shoppingList = ref([]);
                 const hotels = ref([]); 
                 const foodList = ref([]); 
                 const packingList = ref({ lai: [], ze: [] }); 
@@ -400,7 +371,6 @@
                 const weather = reactive({ temp: '--', code: 0, desc: '載入中...', iconClass: 'fa-solid fa-cloud', loading: false });
 
                 const editForm = reactive({ id: null, category: 'spot', name: '', time: '', note: '', ticket: '', transportTime: 30, transportType: 'train', images: [], image: null });
-                const newShoppingItem = reactive({ name: '', checked: false });
                 const hotelForm = reactive({ name: '', dates: '', checkIn: '15:00', checkOut: '11:00' });
                 const newFoodItem = reactive({ name: '', category: 'osaka', note: '', image: null });
 
@@ -432,7 +402,7 @@
                 const getCategoryBg = (cat) => ({ spot: 'bg-pink-400', food: 'bg-orange-400', shopping: 'bg-purple-400', flight: 'bg-blue-400', hotel: 'bg-indigo-400' }[cat] || 'bg-gray-400');
                 const getCategoryIcon = (cat) => ({ spot: 'fa-solid fa-camera', food: 'fa-solid fa-utensils', shopping: 'fa-solid fa-bag-shopping', flight: 'fa-solid fa-plane', hotel: 'fa-solid fa-bed' }[cat] || 'fa-solid fa-star');
                 const getTransportIcon = (t) => t === 'walk' ? 'fa-solid fa-person-walking' : t === 'car' ? 'fa-solid fa-car' : 'fa-solid fa-train-subway';
-                const getTabIcon = (t) => ({ 'itinerary': 'fa-solid fa-map-location-dot', 'info': 'fa-solid fa-circle-info', 'shopping': 'fa-solid fa-bag-shopping', 'food': 'fa-solid fa-utensils', 'packing': 'fa-solid fa-suitcase' }[t]);
+                const getTabIcon = (t) => ({ 'itinerary': 'fa-solid fa-map-location-dot', 'info': 'fa-solid fa-circle-info', 'food': 'fa-solid fa-utensils', 'packing': 'fa-solid fa-suitcase' }[t]);
 
                 const getWeatherIconClass = (code) => {
                     if (code === 0) return 'fa-solid fa-sun text-yellow-400';
@@ -483,12 +453,10 @@
                         isLoadingData.value = true;
                         
                         const dbItinerary = await localforage.getItem('itineraryData');
-                        const dbShopping = await localforage.getItem('shoppingList');
                         const dbHotels = await localforage.getItem('hotels'); 
                         const dbFood = await localforage.getItem('foodList'); 
                         const dbPacking = await localforage.getItem('packingList'); 
 
-                        shoppingList.value = Array.isArray(dbShopping) ? dbShopping : [];
                         hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; 
                         foodList.value = Array.isArray(dbFood) ? dbFood : [];
                         packingList.value = dbPacking ? dbPacking : { lai: [], ze: [] }; 
@@ -508,7 +476,6 @@
                     } catch (e) {
                         console.error('Data load error:', e);
                         Object.assign(itineraryData, defaultItinerary);
-                        shoppingList.value = [];
                         hotels.value = defaultHotels;
                         foodList.value = [];
                         packingList.value = { lai: [], ze: [] };
@@ -523,7 +490,6 @@
                 const saveToDB = async () => {
                     try {
                         await localforage.setItem('itineraryData', JSON.parse(JSON.stringify(itineraryData)));
-                        await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value)));
                         await localforage.setItem('hotels', JSON.parse(JSON.stringify(hotels.value))); 
                         await localforage.setItem('foodList', JSON.parse(JSON.stringify(foodList.value))); 
                         await localforage.setItem('packingList', JSON.parse(JSON.stringify(packingList.value))); 
@@ -536,7 +502,6 @@
                 const exportData = async () => {
                     const data = {
                         itineraryData: itineraryData,
-                        shoppingList: shoppingList.value,
                         hotels: hotels.value,
                         foodList: foodList.value,
                         packingList: packingList.value
@@ -561,7 +526,6 @@
                             const data = JSON.parse(e.target.result);
                             if(confirm('警告：這將會覆蓋目前所有的資料，確定要匯入嗎？')) {
                                 if(data.itineraryData) await localforage.setItem('itineraryData', data.itineraryData);
-                                if(data.shoppingList) await localforage.setItem('shoppingList', data.shoppingList);
                                 if(data.hotels) await localforage.setItem('hotels', data.hotels);
                                 if(data.foodList) await localforage.setItem('foodList', data.foodList);
                                 if(data.packingList) await localforage.setItem('packingList', data.packingList);
@@ -626,7 +590,6 @@
 
                 const handleFabClick = () => {
                     if (currentTab.value === 'itinerary') openAddModal();
-                    else if (currentTab.value === 'shopping') showShoppingModal.value = true;
                     else if (currentTab.value === 'info') { 
                         hotelForm.name = ''; hotelForm.dates = ''; hotelForm.checkIn = '15:00'; hotelForm.checkOut = '11:00';
                         showHotelModal.value = true;
@@ -701,17 +664,6 @@
                 const confirmDelete = async () => { if(confirm('刪除?')) { itineraryData[currentDayIndex.value].splice(editingIndex.value, 1); await saveToDB(); showEditModal.value = false; } };
                 const removeImage = (idx) => editForm.images.splice(idx, 1);
                 
-                // 修改: 純文字儲存
-                const saveShoppingItem = async () => { 
-                    if(newShoppingItem.name) { 
-                        shoppingList.value.push({...newShoppingItem}); 
-                        await saveToDB(); 
-                        showShoppingModal.value = false; 
-                        newShoppingItem.name=''; 
-                    }
-                };
-                const deleteShoppingItem = async (idx) => { shoppingList.value.splice(idx, 1); await saveToDB(); };
-                
                 const openMap = (l) => window.open(`https://www.google.com/maps/search/?api=1&query=?q=${encodeURIComponent(l)}`, '_blank');
                 const openImage = (u) => window.open(u, '_blank');
                 const closeModal = () => showEditModal.value = false;
@@ -742,17 +694,15 @@
                 };
                 
                 return {
-                    currentTab, currentDayIndex, days, hotels, currentDayItinerary,
-                    showEditModal, showShoppingModal, showHotelModal, showFoodModal, 
-                    editForm, newShoppingItem, hotelForm, newFoodItem,
+                    currentTab, currentDayIndex, days, hotels, currentDayItinerary, 
+                    showEditModal, showHotelModal, showFoodModal, 
+                    editForm, hotelForm, newFoodItem,
                     isEditing, isCompressing, isLoadingData,
                     getCategoryColor, getCategoryBg, getCategoryIcon, getTransportIcon, getTabIcon,
                     handleFabClick, openAddModal, editItem, saveItinerary, confirmDelete, closeModal,
-                    saveShoppingItem, deleteShoppingItem, 
                     saveHotel, deleteHotel,
                     saveFoodItem, deleteFoodItem, handleFoodImageUpload, osakaFoods, kyotoFoods, foodList,
                     packingList, packingInputs, addPackingItem, removePackingItem, savePacking,
-                    saveToDB, // 新增這行，讓 HTML 可以呼叫 saveToDB
                     openMap, openImage, handleItineraryImageUpload, removeImage,
                     weather, calcInput, calcFormula, calcResultTwd, appendCalc, clearCalc, calculateFinal,
                     exportData, importData
