@@ -60,6 +60,53 @@
         /* Checkbox Custom Style */
         .custom-checkbox:checked + div { @apply line-through text-gray-400 opacity-60; }
         .custom-checkbox:checked { @apply bg-sakura-red border-sakura-red; }
+
+        /* ================= 備忘錄專屬樣式 ================= */
+        .memo-wrapper {
+            position: relative;
+            margin-top: 1rem;
+        }
+        .memo-pad {
+            background-color: #fcf9f2; /* 微微泛黃的紙張色 */
+            border-radius: 8px;
+            padding: 16px 20px;
+            border: 5px solid #bdae93; /* 粗糙厚紙板邊框 */
+            box-shadow: 2px 4px 10px rgba(0,0,0,0.06);
+            /* 點點背景網格 */
+            background-image: radial-gradient(#d3cabd 1.5px, transparent 1.5px);
+            background-size: 15px 15px;
+            background-position: 0 0;
+            overflow: hidden;
+        }
+        .memo-tape {
+            position: absolute;
+            top: -6px;
+            left: -12px;
+            width: 70px;
+            height: 18px;
+            background-color: #c9b188; /* 紙膠帶底色 */
+            transform: rotate(-30deg);
+            /* 紙膠帶格紋 */
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.2) 2px, rgba(255,255,255,0.2) 4px);
+            box-shadow: 1px 2px 4px rgba(0,0,0,0.15);
+            z-index: 10;
+            border-radius: 2px;
+        }
+        .memo-tape-br {
+            position: absolute;
+            bottom: -6px;
+            right: -12px;
+            width: 70px;
+            height: 18px;
+            background-color: #c9b188; /* 紙膠帶底色 */
+            transform: rotate(-30deg);
+            /* 紙膠帶格紋 */
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.2) 2px, rgba(255,255,255,0.2) 4px);
+            box-shadow: 1px 2px 4px rgba(0,0,0,0.15);
+            z-index: 10;
+            border-radius: 2px;
+        }
+        /* ================================================ */
     </style>
 </head>
 <body class="h-screen overflow-hidden font-sans w-full bg-gray-100">
@@ -129,7 +176,22 @@
                                             <div class="flex justify-between items-baseline pr-12"><h3 class="font-bold text-gray-700 text-xl">{{ item.name }}</h3></div>
                                             <div class="text-sakura-red font-medium text-base mt-1">{{ item.time }}</div>
                                             <div class="flex flex-wrap gap-2 mt-3" v-if="item.ticket || item.openTime"><span v-if="item.ticket" class="text-sm bg-yellow-50 text-yellow-600 px-2 py-1 rounded border border-yellow-100"><i class="fa-solid fa-ticket mr-1"></i>{{ item.ticket }}</span></div>
-                                            <p v-if="item.note" class="text-sm text-gray-500 mt-3 bg-gray-50 p-3 rounded-lg">{{ item.note }}</p>
+                                            
+                                            <div v-if="item.note" class="memo-wrapper mt-4">
+                                                <div class="memo-tape"></div>
+                                                <div class="memo-tape-br"></div>
+                                                <div class="memo-pad relative z-0">
+                                                    <div class="inline-block bg-[#f0e8da] text-[#8c7a61] px-3 py-1 rounded-md text-xs font-bold mb-3 shadow-sm tracking-wider">
+                                                        <i class="fa-solid fa-pencil mr-1"></i>Notes
+                                                    </div>
+                                                    <ul class="text-sm text-gray-700 space-y-2">
+                                                        <li v-for="(line, lineIdx) in item.note.split('\n').filter(l => l.trim())" :key="lineIdx" class="flex items-start">
+                                                            <span class="text-[#c9b188] mr-2 mt-0.5 text-xs"><i class="fa-solid fa-star-of-life"></i></span>
+                                                            <span class="flex-1 font-medium leading-relaxed">{{ line }}</span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
                                             <div v-if="item.images && item.images.length > 0" class="mt-4"><div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2"><img v-for="(img, imgIdx) in item.images" :key="imgIdx" :src="img" class="h-40 w-auto rounded-xl border border-gray-100 shadow-sm cursor-pointer hover:opacity-90 transition-opacity" @click.stop="openImage(img)"></div></div>
                                             <div v-else-if="item.image" class="mt-4"><img :src="item.image" class="w-full md:w-2/3 h-48 object-cover rounded-xl border border-gray-100 shadow-sm"></div>
                                         </div>
@@ -330,7 +392,10 @@
                     <div class="grid grid-cols-2 gap-4"><div><label class="label-text">時間</label><input type="time" v-model="editForm.time" class="input-field"></div><div><label class="label-text">交通時間(分)</label><input type="number" v-model="editForm.transportTime" class="input-field"></div></div>
                     <div><label class="label-text">交通方式</label><select v-model="editForm.transportType" class="input-field"><option value="walk">步行</option><option value="train">大眾運輸</option><option value="car">開車/接送</option></select></div>
                     <div><label class="label-text">費用 / 門票</label><input type="text" v-model="editForm.ticket" class="input-field" placeholder="例如：600円"></div>
-                    <div><label class="label-text">備註</label><textarea v-model="editForm.note" class="input-field h-20"></textarea></div>
+                    <div><label class="label-text">備註 (按 Enter 換行會自動變成重點項目)</label><textarea v-model="editForm.note" class="input-field h-24" placeholder="例如：
+門票+快通4。
+瑪利歐、哈利波特、小小兵。
+不能帶外食。"></textarea></div>
                     <div>
                         <label class="label-text flex justify-between items-center"><span>圖片 (可多選)</span><span v-if="isCompressing" class="text-sakura-red text-xs flex items-center"><div class="loader mr-1"></div>處理中...</span></label>
                         <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -414,15 +479,15 @@
                 const isEditing = ref(false), editingIndex = ref(-1), isCompressing = ref(false), isLoadingData = ref(true);
 
                 const days = [
-                    { date: '11', week: 'Fri', fullDate: '2026-04-11', location: '大阪', lat: 34.6937, lng: 135.5023 },
-                    { date: '12', week: 'Sat', fullDate: '2026-04-12', location: '大阪', lat: 34.6937, lng: 135.5023 },
-                    { date: '13', week: 'Sun', fullDate: '2026-04-13', location: '環球影城', lat: 34.6654, lng: 135.4323 },
-                    { date: '14', week: 'Mon', fullDate: '2026-04-14', location: '大阪/京都', lat: 35.0116, lng: 135.7681 },
-                    { date: '15', week: 'Tue', fullDate: '2026-04-15', location: '京都', lat: 35.0116, lng: 135.7681 },
-                    { date: '16', week: 'Wed', fullDate: '2026-04-16', location: '京都', lat: 35.0116, lng: 135.7681 },
-                    { date: '17', week: 'Thu', fullDate: '2026-04-17', location: '京都/大阪', lat: 34.6937, lng: 135.5023 },
-                    { date: '18', week: 'Fri', fullDate: '2026-04-18', location: '大阪/堺', lat: 34.5733, lng: 135.4830 },
-                    { date: '19', week: 'Sat', fullDate: '2026-04-19', location: '關西機場', lat: 34.4320, lng: 135.2304 }
+                    { date: '11', week: 'Sat', fullDate: '2026-04-11', location: '大阪', lat: 34.6937, lng: 135.5023 },
+                    { date: '12', week: 'Sun', fullDate: '2026-04-12', location: '大阪', lat: 34.6937, lng: 135.5023 },
+                    { date: '13', week: 'Mon', fullDate: '2026-04-13', location: '環球影城', lat: 34.6654, lng: 135.4323 },
+                    { date: '14', week: 'Tue', fullDate: '2026-04-14', location: '大阪/京都', lat: 35.0116, lng: 135.7681 },
+                    { date: '15', week: 'Wed', fullDate: '2026-04-15', location: '京都', lat: 35.0116, lng: 135.7681 },
+                    { date: '16', week: 'Thu', fullDate: '2026-04-16', location: '京都', lat: 35.0116, lng: 135.7681 },
+                    { date: '17', week: 'Fri', fullDate: '2026-04-17', location: '京都/大阪', lat: 34.6937, lng: 135.5023 },
+                    { date: '18', week: 'Sat', fullDate: '2026-04-18', location: '大阪/堺', lat: 34.5733, lng: 135.4830 },
+                    { date: '19', week: 'Sun', fullDate: '2026-04-19', location: '關西機場', lat: 34.4320, lng: 135.2304 }
                 ];
                 
                 const defaultHotels = [
@@ -439,7 +504,6 @@
                 const packingList = ref({ lai: [], ze: [] }); 
                 const packingInputs = reactive({ lai: '', ze: '' });
                 
-                // 新增：購物清單資料與表單
                 const shoppingList = ref([]);
                 const shoppingForm = reactive({ id: null, text: '', category: 'gift', checked: false });
 
@@ -531,7 +595,7 @@
                         const dbHotels = await localforage.getItem('hotels'); 
                         const dbFood = await localforage.getItem('foodList'); 
                         const dbPacking = await localforage.getItem('packingList'); 
-                        const dbShopping = await localforage.getItem('shoppingList'); // 載入購物清單
+                        const dbShopping = await localforage.getItem('shoppingList'); 
 
                         hotels.value = Array.isArray(dbHotels) ? dbHotels : defaultHotels; 
                         foodList.value = Array.isArray(dbFood) ? dbFood : [];
@@ -571,7 +635,7 @@
                         await localforage.setItem('hotels', JSON.parse(JSON.stringify(hotels.value))); 
                         await localforage.setItem('foodList', JSON.parse(JSON.stringify(foodList.value))); 
                         await localforage.setItem('packingList', JSON.parse(JSON.stringify(packingList.value))); 
-                        await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value))); // 儲存購物清單
+                        await localforage.setItem('shoppingList', JSON.parse(JSON.stringify(shoppingList.value))); 
                     } catch (e) {
                         alert("儲存失敗: " + e.message);
                     }
@@ -676,7 +740,6 @@
                         newFoodItem.name = ''; newFoodItem.note = ''; newFoodItem.image = null; newFoodItem.category = 'osaka';
                         showFoodModal.value = true;
                     } else if (currentTab.value === 'shopping') {
-                        // 重置購物表單
                         Object.assign(shoppingForm, { id: null, text: '', category: 'gift', checked: false });
                         showShoppingModal.value = true;
                     }
@@ -726,15 +789,12 @@
                     }
                 };
                 
-                // 新增：購物清單相關函式
                 const saveShoppingItem = async () => {
                     if (shoppingForm.text) {
                         if (shoppingForm.id) {
-                            // 修改現有
                             const idx = shoppingList.value.findIndex(i => i.id === shoppingForm.id);
                             if (idx !== -1) shoppingList.value[idx] = { ...shoppingForm };
                         } else {
-                            // 新增
                             shoppingList.value.push({ ...shoppingForm, id: Date.now() });
                         }
                         await saveToDB();
@@ -757,7 +817,6 @@
                     }
                 };
                 const saveShopping = async () => { await saveToDB(); };
-
 
                 const addPackingItem = async (type) => {
                     const text = packingInputs[type].trim();
@@ -830,4 +889,3 @@
     <style>.label-text { @apply block text-xs font-bold text-gray-400 mb-1 ml-1; } .input-field { @apply w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-sakura-red focus:bg-white transition-colors; } .slide-up-animation { animation: slideUp 0.3s ease-out; } @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
 </body>
 </html>
-
