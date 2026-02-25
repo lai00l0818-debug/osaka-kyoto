@@ -67,12 +67,11 @@
             margin-top: 1rem;
         }
         .memo-pad {
-            background-color: #fcf9f2; /* 微微泛黃的紙張色 */
+            background-color: #fcf9f2; 
             border-radius: 8px;
             padding: 16px 20px;
-            border: 5px solid #bdae93; /* 粗糙厚紙板邊框 */
+            border: 5px solid #bdae93; 
             box-shadow: 2px 4px 10px rgba(0,0,0,0.06);
-            /* 點點背景網格 */
             background-image: radial-gradient(#d3cabd 1.5px, transparent 1.5px);
             background-size: 15px 15px;
             background-position: 0 0;
@@ -84,9 +83,8 @@
             left: -12px;
             width: 70px;
             height: 18px;
-            background-color: #c9b188; /* 紙膠帶底色 */
+            background-color: #c9b188; 
             transform: rotate(-30deg);
-            /* 紙膠帶格紋 */
             background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.2) 2px, rgba(255,255,255,0.2) 4px);
             box-shadow: 1px 2px 4px rgba(0,0,0,0.15);
             z-index: 10;
@@ -98,9 +96,8 @@
             right: -12px;
             width: 70px;
             height: 18px;
-            background-color: #c9b188; /* 紙膠帶底色 */
+            background-color: #c9b188; 
             transform: rotate(-30deg);
-            /* 紙膠帶格紋 */
             background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.2) 2px, rgba(255,255,255,0.2) 4px);
             box-shadow: 1px 2px 4px rgba(0,0,0,0.15);
             z-index: 10;
@@ -196,7 +193,9 @@
                                             <div v-else-if="item.image" class="mt-4"><img :src="item.image" class="w-full md:w-2/3 h-48 object-cover rounded-xl border border-gray-100 shadow-sm"></div>
                                         </div>
                                     </div>
-                                    <div class="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"><button @click.stop="editItem(item, index)" class="text-gray-400 hover:text-blue-500 p-2 bg-gray-50 rounded-full"><i class="fa-solid fa-pen"></i></button></div>
+                                    <div class="absolute bottom-3 right-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button @click.stop="editItem(item, index)" class="text-gray-500 hover:text-blue-500 p-2.5 bg-white border border-gray-100 rounded-full shadow-md hover:shadow-lg transition-all"><i class="fa-solid fa-pen"></i></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -392,10 +391,7 @@
                     <div class="grid grid-cols-2 gap-4"><div><label class="label-text">時間</label><input type="time" v-model="editForm.time" class="input-field"></div><div><label class="label-text">交通時間(分)</label><input type="number" v-model="editForm.transportTime" class="input-field"></div></div>
                     <div><label class="label-text">交通方式</label><select v-model="editForm.transportType" class="input-field"><option value="walk">步行</option><option value="train">大眾運輸</option><option value="car">開車/接送</option></select></div>
                     <div><label class="label-text">費用 / 門票</label><input type="text" v-model="editForm.ticket" class="input-field" placeholder="例如：600円"></div>
-                    <div><label class="label-text">備註 (按 Enter 換行會自動變成重點項目)</label><textarea v-model="editForm.note" class="input-field h-24" placeholder="例如：
-門票+快通4。
-瑪利歐、哈利波特、小小兵。
-不能帶外食。"></textarea></div>
+                    <div><label class="label-text">備註 (按 Enter 換行會自動變成重點項目)</label><textarea v-model="editForm.note" class="input-field h-24" placeholder="例如：&#10;門票+快通4。&#10;瑪利歐、哈利波特、小小兵。&#10;不能帶外食。"></textarea></div>
                     <div>
                         <label class="label-text flex justify-between items-center"><span>圖片 (可多選)</span><span v-if="isCompressing" class="text-sakura-red text-xs flex items-center"><div class="loader mr-1"></div>處理中...</span></label>
                         <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
